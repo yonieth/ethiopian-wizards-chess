@@ -3,684 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ንጉሠ ነገሥት • Ethiopian Wizard's Chess</title>
+  <title>ንጉስ • Nigus Ethiopian Royal Chess</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <style>
     :root {
-      --bg: #0B090E;
-      --surface: rgba(26, 23, 34, 0.86);
+      --bg: #09070C;
+      --surface: rgba(20, 16, 28, 0.88);
       --gold: #D4AF37;
-      --gold-bright: #FFD54F;
+      --gold-bright: #FFE082;
+      --gold-deep: #9A7B1C;
       --ember: #FF5722;
-      --text: #F5F2EB;
-      --muted: #A9A29C;
+      --crimson: #8B1E24;
+      --text: #F7F4EB;
+      --muted: #B8B0A4;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0; padding: 0; width: 100%; height: 100%;
       overflow: hidden; background: var(--bg); color: var(--text);
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       overscroll-behavior: none; touch-action: none; user-select: none; -webkit-user-select: none;
     }
     #canvas-container { position: fixed; inset: 0; z-index: 1; }
-    
-    /* Single-level Material Design 3 Floating HUD */
+
+    /* --- ROYAL ETHIOPIAN MAIN MENU OVERLAY --- */
+    #main-menu {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at center, rgba(14, 11, 20, 0.55) 0%, rgba(7, 5, 10, 0.92) 100%);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+      padding: 16px;
+    }
+    #main-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .menu-card {
+      position: relative;
+      width: min(680px, 94vw);
+      max-height: 92vh;
+      background: linear-gradient(160deg, rgba(28, 22, 38, 0.95) 0%, rgba(12, 9, 18, 0.98) 100%);
+      border: 1.5px solid var(--gold);
+      border-radius: 24px;
+      padding: 20px 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 28px rgba(212, 175, 55, 0.12);
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 22px;
+      align-items: center;
+      overflow: hidden;
+    }
+    /* Ethiopian Tibeb Geometric Gold Corner Borders */
+    .menu-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+      background: repeating-linear-gradient(90deg, #1B8A3D 0px, #1B8A3D 24px, #FCD116 24px, #FCD116 48px, #D62828 48px, #D62828 72px, #D4AF37 72px, #D4AF37 96px);
+      opacity: 0.9;
+    }
+
+    .menu-hero {
+      display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+      border-right: 1px solid rgba(212, 175, 55, 0.22);
+      padding-right: 18px;
+    }
+    .royal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
+      color: var(--gold-bright); background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 999px;
+      padding: 4px 11px; margin-bottom: 8px;
+    }
+    .geez-title {
+      font-size: clamp(38px, 6vw, 54px); font-weight: 900; line-height: 1;
+      margin: 0;
+      background: linear-gradient(180deg, #FFF6D6 0%, #FFD54F 45%, #B8860B 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
+    }
+    .eng-title {
+      font-size: clamp(16px, 2.5vw, 21px); font-weight: 800; letter-spacing: 4px;
+      color: var(--text); margin: 4px 0 6px 0;
+    }
+    .menu-sub {
+      font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0 0 14px 0;
+    }
+
+    /* Yona Graphics Developer Signature Card */
+    .yona-brand {
+      display: flex; align-items: center; gap: 11px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(212, 175, 55, 0.32);
+      border-radius: 14px; padding: 8px 13px; width: 100%;
+    }
+    .yona-logo-box {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: #050507; border: 1px solid rgba(255,255,255,0.22);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+    }
+    .yona-text { display: flex; flex-direction: column; }
+    .yona-dev-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+    .yona-dev-name { font-size: 13px; font-weight: 800; color: var(--gold-bright); letter-spacing: 0.4px; }
+
+    /* Menu Controls Right Column */
+    .menu-actions { display: flex; flex-direction: column; gap: 9px; }
+    .menu-btn {
+      appearance: none; width: 100%;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text); padding: 11px 16px; border-radius: 14px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .menu-btn.primary {
+      background: linear-gradient(135deg, #D4AF37 0%, #9A7B1C 100%);
+      color: #09070C; border-color: #FFE082;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+      font-size: 14px;
+    }
+    .menu-btn:active { transform: scale(0.98); }
+    .menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* --- SINGLE-LEVEL COMPACT LANDSCAPE HUD --- */
     .hud-bar {
       position: fixed; left: 50%; transform: translateX(-50%);
-      z-index: 10; display: flex; align-items: center; gap: 8px;
-      background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 999px;
-      padding: 6px 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.65);
-      max-width: 96vw; white-space: nowrap;
-    }
-    .top-hud { top: max(12px, env(safe-area-inset-top)); justify-content: space-between; width: min(560px, 94vw); }
-    .bottom-hud { bottom: max(14px, env(safe-area-inset-bottom)); gap: 6px; flex-wrap: nowrap; overflow-x: auto; }
-    
-    .brand { display: flex; align-items: center; gap: 8px; }
-    .crown-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-bright);
-      transition: all 0.3s ease;
-    }
-    .brand-title { font-weight: 700; font-size: 13px; letter-spacing: 0.5px; color: var(--gold-bright); }
-    .turn-pill {
-      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
-      background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.35);
-      color: var(--text);
-    }
-    .btn {
-      appearance: none; border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06); color: var(--text);
-      padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px;
-    }
-    .btn:active, .btn.active {
-      background: rgba(212, 175, 55, 0.24); border-color: var(--gold); color: var(--gold-bright);
-    }
-    #toast {
-      position: fixed; top: 68px; left: 50%; transform: translateX(-50%);
-      z-index: 12; background: rgba(15, 12, 20, 0.92); color: var(--gold-bright);
-      border: 1px solid var(--gold); border-radius: 999px; padding: 6px 16px;
-      font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0;
-      transition: opacity 0.25s ease;
-    }
-    #toast.show { opacity: 1; }
-  </style>
-</head>
-<body>
-  <div id="canvas-container"></div>
-
-  <!-- Single-Level Top HUD -->
-  <div class="hud-bar top-hud">
-    <div class="brand">
-      <div class="crown-dot" id="turn-dot"></div>
-      <span class="brand-title">ንጉሠ ነገሥት • NEGEST CHESS</span>
-    </div>
-    <div class="turn-pill" id="status-text">Marble's Turn (ንጉሥ)</div>
-  </div>
-
-  <div id="toast">⚔️ Royal Capture!</div>
-
-  <!-- Single-Level Bottom HUD -->
-  <div class="hud-bar bottom-hud">
-    <button class="btn active" id="btn-mode" onclick="toggleMode()">🤖 vs AI</button>
-    <button class="btn" id="btn-cam" onclick="cycleCamera()">🎥 Cam: White</button>
-    <button class="btn active" id="btn-fx" onclick="toggleActionCam()">⚡ Action Cam</button>
-    <button class="btn" onclick="undoMove()">↩️ Undo</button>
-    <button class="btn" onclick="resetGame()">🔄 New</button>
-  </div>
-
-  <script>
-    // --- PROCEDURAL SOUND SYNTHESIS ---
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-    function playSound(type) {
-      try {
-        if (!audioCtx) audioCtx = new AudioCtx();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        if (type === 'select') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(520, now);
-          osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-          osc.start(now); osc.stop(now + 0.09);
-        } else if (type === 'move') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(180, now);
-          osc.frequency.exponentialRampToValueAtTime(95, now + 0.16);
-          gain.gain.setValueAtTime(0.22, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
-          osc.start(now); osc.stop(now + 0.17);
-        } else if (type === 'shatter') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(140, now);
-          osc.frequency.exponentialRampToValueAtTime(38, now + 0.45);
-          gain.gain.setValueAtTime(0.35, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
-          osc.start(now); osc.stop(now + 0.46);
-        }
-      } catch (e) {}
-    }
-
-    // --- THREE.JS SCENE SETUP ---
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0B090E);
-    scene.fog = new THREE.FogExp2(0x0B090E, 0.028);
-
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 9.5, 9.8);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
-
-    const ControlsClass = THREE.OrbitControls || window.OrbitControls;
-    const controls = new ControlsClass(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.maxPolarAngle = Math.PI / 2.15;
-    controls.minDistance = 5;
-    controls.maxDistance = 18;
-    controls.target.set(0, 0, 0);
-
-    // --- LIGHTING ---
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-
-    const sunLight = new THREE.DirectionalLight(0xFFF3D6, 1.35);
-    sunLight.position.set(6, 14, 8);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
-    scene.add(sunLight);
-
-    const rimLight = new THREE.PointLight(0xFF5722, 1.1, 20);
-    rimLight.position.set(-6, 5, -6);
-    scene.add(rimLight);
-
-    const goldLight = new THREE.PointLight(0xD4AF37, 0.9, 20);
-    goldLight.position.set(6, 5, 6);
-    scene.add(goldLight);
-
-    // --- MATERIALS ---
-    const matMarble = new THREE.MeshStandardMaterial({ color: 0xF3EFE6, roughness: 0.22, metalness: 0.08 });
-    const matGold = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.25, metalness: 0.85, emissive: 0x3A2800, emissiveIntensity: 0.25 });
-    const matObsidian = new THREE.MeshStandardMaterial({ color: 0x16131D, roughness: 0.15, metalness: 0.45 });
-    const matEmber = new THREE.MeshStandardMaterial({ color: 0xFF5722, roughness: 0.3, metalness: 0.5, emissive: 0xFF3D00, emissiveIntensity: 0.75 });
-
-    const matSqLight = new THREE.MeshStandardMaterial({ color: 0xEAE3D2, roughness: 0.35, metalness: 0.05 });
-    const matSqDark = new THREE.MeshStandardMaterial({ color: 0x221E2B, roughness: 0.25, metalness: 0.2 });
-    const matBorder = new THREE.MeshStandardMaterial({ color: 0x120F18, roughness: 0.4, metalness: 0.5 });
-
-    // --- CHESS BOARD & HIGHLIGHTS ---
-    const boardGroup = new THREE.Group();
-    scene.add(boardGroup);
-
-    const squareMeshes = {};
-    const highlightMeshes = {};
-
-    // Aksumite Stepped Plinth Base
-    const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.45, 9.2), matBorder);
-    baseMesh.position.y = -0.25;
-    baseMesh.receiveShadow = true;
-    boardGroup.add(baseMesh);
-
-    const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(8.35, 0.48, 8.35), matGold);
-    goldTrim.position.y = -0.24;
-    boardGroup.add(goldTrim);
-
-    const files = ['a','b','c','d','e','f','g','h'];
-    for (let r = 0; r < 8; r++) {
-      for (let f = 0; f < 8; f++) {
-        const sqName = files[f] + (8 - r);
-        const isLight = (r + f) % 2 === 0;
-        const sq = new THREE.Mesh(new THREE.BoxGeometry(1, 0.15, 1), isLight ? matSqLight : matSqDark);
-        sq.position.set(f - 3.5, 0, r - 3.5);
-        sq.receiveShadow = true;
-        sq.userData = { square: sqName };
-        boardGroup.add(sq);
-        squareMeshes[sqName] = sq;
-
-        // Highlight ring
-        const hlGeo = new THREE.RingGeometry(0.28, 0.42, 24);
-        hlGeo.rotateX(-Math.PI / 2);
-        const hlMat = new THREE.MeshBasicMaterial({ color: 0xFFD54F, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-        const hl = new THREE.Mesh(hlGeo, hlMat);
-        hl.position.set(f - 3.5, 0.09, r - 3.5);
-        hl.visible = false;
-        boardGroup.add(hl);
-        highlightMeshes[sqName] = hl;
-      }
-    }
-
-    // --- PROCEDURAL ETHIOPIAN ROYAL PIECE BUILDER ---
-    function createEthiopianPiece(type, color) {
-      const group = new THREE.Group();
-      const primaryMat = color === 'w' ? matMarble : matObsidian;
-      const accentMat = color === 'w' ? matGold : matEmber;
-
-      // Pedestal Base with Aksumite steps
-      const base1 = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.12, 20), primaryMat);
-      base1.position.y = 0.06;
-      base1.castShadow = true;
-      group.add(base1);
-
-      const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.025, 10, 24), accentMat);
-      baseRing.rotation.x = Math.PI / 2;
-      baseRing.position.y = 0.13;
-      group.add(baseRing);
-
-      const floatGroup = new THREE.Group();
-      group.add(floatGroup);
-
-      if (type === 'p') {
-        // GASHA JAGRE (Royal Shield Bearer)
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 0.55, 16), primaryMat);
-        body.position.y = 0.4; body.castShadow = true; group.add(body);
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), primaryMat);
-        head.position.y = 0.78; group.add(head);
-        // Conical Ethiopian Gasha Shield
-        const shield = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.12, 16), accentMat);
-        shield.rotation.x = Math.PI / 2;
-        shield.position.set(0, 0.5, color === 'w' ? -0.22 : 0.22);
-        floatGroup.add(shield);
-      } else if (type === 'r') {
-        // HAWILT STELE (Aksumite Obelisk)
-        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.95, 0.32), primaryMat);
-        pillar.position.y = 0.6; pillar.castShadow = true; group.add(pillar);
-        const apex = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.32, 16), accentMat);
-        apex.rotation.x = Math.PI / 2; apex.position.y = 1.08; group.add(apex);
-        const falseDoor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.35), accentMat);
-        falseDoor.position.y = 0.32; group.add(falseDoor);
-      } else if (type === 'n') {
-        // FERESEGNA (Royal Warhorse)
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.55, 16), primaryMat);
-        torso.position.y = 0.4; group.add(torso);
-        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.55, 0.32), primaryMat);
-        neck.position.set(0, 0.82, 0);
-        neck.rotation.x = color === 'w' ? -0.25 : 0.25;
-        neck.castShadow = true; group.add(neck);
-        const snout = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 0.38), primaryMat);
-        snout.position.set(0, 1.02, color === 'w' ? -0.15 : 0.15);
-        group.add(snout);
-        const mane = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.12), accentMat);
-        mane.position.set(0, 0.88, color === 'w' ? 0.14 : -0.14);
-        floatGroup.add(mane);
-      } else if (type === 'b') {
-        // ABUNA (High Priest with Lalibela Cross)
-        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.32, 0.85, 20), primaryMat);
-        robe.position.y = 0.55; robe.castShadow = true; group.add(robe);
-        const mitre = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 1), primaryMat);
-        mitre.position.y = 1.08; group.add(mitre);
-        const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.34, 0.07), accentMat);
-        const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.07), accentMat);
-        vBar.position.y = 1.42; hBar.position.y = 1.45;
-        floatGroup.add(vBar); floatGroup.add(hBar);
-      } else if (type === 'q') {
-        // ITEGE (Empress with Solar Halo Crown)
-        const gown = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.35, 1.02, 24), primaryMat);
-        gown.position.y = 0.62; gown.castShadow = true; group.add(gown);
-        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.22, 16), accentMat);
-        crown.position.y = 1.2; group.add(crown);
-        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 12, 24), accentMat);
-        halo.position.y = 1.5; floatGroup.add(halo);
-      } else if (type === 'k') {
-        // NIGUSE NEGEST (Emperor of Ethiopia)
-        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 1.12, 24), primaryMat);
-        robe.position.y = 0.68; robe.castShadow = true; group.add(robe);
-        const tier1 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.22, 8), accentMat);
-        tier1.position.y = 1.32; group.add(tier1);
-        const tier2 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), primaryMat);
-        tier2.position.y = 1.5; group.add(tier2);
-        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.36, 0.08), accentMat);
-        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.08, 0.08), accentMat);
-        crossV.position.y = 1.82; crossH.position.y = 1.86;
-        floatGroup.add(crossV); floatGroup.add(crossH);
-      }
-
-      group.userData = { type, color, floatGroup, phase: Math.random() * Math.PI * 2 };
-      return group;
-    }
-
-    // --- CHESS LOGIC & BOARD SYNC ---
-    const game = new Chess();
-    const pieceMeshes = {};
-    let selectedSquare = null;
-    let legalMovesForSelected = [];
-    let vsAI = true;
-    let actionCamEnabled = true;
-    let isAnimating = false;
-    let camPreset = 0;
-
-    function squareToWorld(sq) {
-      const f = files.indexOf(sq[0]);
-      const r = 8 - parseInt(sq[1], 10);
-      return new THREE.Vector3(f - 3.5, 0.08, r - 3.5);
-    }
-
-    function syncBoardImmediate() {
-      Object.values(pieceMeshes).forEach(m => boardGroup.remove(m));
-      for (const k in pieceMeshes) delete pieceMeshes[k];
-
-      const board = game.board();
-      for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-          const p = board[r][f];
-          if (p) {
-            const sq = files[f] + (8 - r);
-            const mesh = createEthiopianPiece(p.type, p.color);
-            mesh.position.copy(squareToWorld(sq));
-            mesh.userData.square = sq;
-            boardGroup.add(mesh);
-            pieceMeshes[sq] = mesh;
-          }
-        }
-      }
-      updateHUD();
-    }
-
-    // --- SHATTER PHYSICS SYSTEM ---
-    const activeShards = [];
-    function spawnShatter(worldPos, color) {
-      playSound('shatter');
-      const mat = color === 'w' ? matMarble : matObsidian;
-      const accent = color === 'w' ? matGold : matEmber;
-      for (let i = 0; i < 32; i++) {
-        const size = 0.07 + Math.random() * 0.11;
-        const shard = new THREE.Mesh(
-          new THREE.DodecahedronGeometry(size, 0),
-          i % 4 === 0 ? accent : mat
-        );
-        shard.position.copy(worldPos).add(new THREE.Vector3(0, 0.35 + Math.random() * 0.5, 0));
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 1.6 + Math.random() * 3.4;
-        shard.userData = {
-          vel: new THREE.Vector3(Math.cos(angle) * speed, 2.2 + Math.random() * 3.2, Math.sin(angle) * speed),
-          rot: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8),
-          life: 1.0
-        };
-        scene.add(shard);
-        activeShards.push(shard);
-      }
-    }
-
-    // --- WIZARD'S CHESS MOVE & ATTACK ANIMATION ---
-    const activeAnimations = [];
-    function executeAnimatedMove(moveObj, onComplete) {
-      isAnimating = true;
-      clearHighlights();
-
-      const fromSq = moveObj.from;
-      const toSq = moveObj.to;
-      const attacker = pieceMeshes[fromSq];
-      const defender = pieceMeshes[toSq];
-
-      const startPos = squareToWorld(fromSq);
-      const endPos = squareToWorld(toSq);
-
-      const savedCamPos = camera.position.clone();
-      const savedTarget = controls.target.clone();
-
-      if (defender && actionCamEnabled) {
-        showToast('⚔️ Royal Strike! Shattering ' + toSq.toUpperCase());
-        const mid = startPos.clone().lerp(endPos, 0.65);
-        camera.position.set(mid.x + 2.8, 3.6, mid.z + 2.8);
-        controls.target.copy(endPos);
-      } else {
-        playSound('move');
-      }
-
-      const duration = defender ? 0.85 : 0.42;
-      activeAnimations.push({
-        elapsed: 0,
-        duration,
-        shattered: false,
-        update(dt) {
-          this.elapsed += dt;
-          const t = Math.min(this.elapsed / this.duration, 1);
-
-          if (attacker) {
-            if (!defender) {
-              // Smooth arc glide
-              attacker.position.lerpVectors(startPos, endPos, t);
-              attacker.position.y = 0.08 + Math.sin(t * Math.PI) * 0.45;
-            } else {
-              // Wizard Attack: charge up -> lunge -> strike shatter
-              if (t < 0.65) {
-                const subT = t / 0.65;
-                attacker.position.lerpVectors(startPos, endPos, subT * 0.82);
-                attacker.position.y = 0.08 + Math.sin(subT * Math.PI) * 0.65;
-              } else {
-                const subT = (t - 0.65) / 0.35;
-                attacker.position.lerpVectors(startPos.clone().lerp(endPos, 0.82), endPos, subT);
-                attacker.position.y = 0.08;
-                if (!this.shattered) {
-                  this.shattered = true;
-                  boardGroup.remove(defender);
-                  spawnShatter(endPos, defender.userData.color);
-                }
-              }
-            }
-          }
-
-          if (t >= 1) {
-            if (defender && actionCamEnabled) {
-              setTimeout(() => {
-                camera.position.copy(savedCamPos);
-                controls.target.copy(savedTarget);
-              }, 380);
-            }
-            syncBoardImmediate();
-            isAnimating = false;
-            if (onComplete) onComplete();
-            return true;
-          }
-          return false;
-        }
-      });
-    }
-
-    // --- INTERACTION & RAYCASTING ---
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    function clearHighlights() {
-      Object.values(highlightMeshes).forEach(h => (h.visible = false));
-    }
-
-    function selectSquare(sq) {
-      clearHighlights();
-      selectedSquare = sq;
-      if (!sq) return;
-
-      playSound('select');
-      legalMovesForSelected = game.moves({ square: sq, verbose: true });
-      highlightMeshes[sq].material.color.setHex(0x00E5FF);
-      highlightMeshes[sq].visible = true;
-
-      legalMovesForSelected.forEach(m => {
-        const hl = highlightMeshes[m.to];
-        hl.material.color.setHex(m.captured ? 0xFF3D00 : 0xFFD54F);
-        hl.visible = true;
-      });
-    }
-
-    function handleBoardTap(clientX, clientY) {
-      if (isAnimating || game.game_over()) return;
-      if (vsAI && game.turn() === 'b') return;
-
-      pointer.x = (clientX / window.innerWidth) * 2 - 1;
-      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-
-      const hits = raycaster.intersectObjects(boardGroup.children, true);
-      let tappedSq = null;
-      for (const hit of hits) {
-        let obj = hit.object;
-        while (obj && !obj.userData.square) obj = obj.parent;
-        if (obj && obj.userData.square) {
-          tappedSq = obj.userData.square;
-          break;
-        }
-      }
-
-      if (!tappedSq) {
-        selectSquare(null);
-        return;
-      }
-
-      // Check if tapped square is a valid destination
-      const chosenMove = legalMovesForSelected.find(m => m.to === tappedSq);
-      if (selectedSquare && chosenMove) {
-        const moveResult = game.move({ from: selectedSquare, to: tappedSq, promotion: 'q' });
-        selectedSquare = null;
-        legalMovesForSelected = [];
-        if (moveResult) {
-          executeAnimatedMove(moveResult, () => {
-            if (vsAI && !game.game_over() && game.turn() === 'b') {
-              setTimeout(makeAIMove, 350);
-            }
-          });
-        }
-        return;
-      }
-
-      // Otherwise check if user tapped their own piece
-      const pieceOnSq = game.get(tappedSq);
-      if (pieceOnSq && pieceOnSq.color === game.turn()) {
-        selectSquare(tappedSq);
-      } else {
-        selectSquare(null);
-      }
-    }
-
-    let downPos = { x: 0, y: 0 };
-    renderer.domElement.addEventListener('pointerdown', e => {
-      downPos = { x: e.clientX, y: e.clientY };
-    });
-    renderer.domElement.addEventListener('pointerup', e => {
-      const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-      if (dist < 12) handleBoardTap(e.clientX, e.clientY);
-    });
-
-    // --- SMART AI OPPONENT ---
-    function makeAIMove() {
-      if (game.game_over()) return;
-      const moves = game.moves({ verbose: true });
-      if (!moves.length) return;
-
-      // Prioritize captures and center control
-      const pieceVal = { p: 10, n: 30, b: 32, r: 50, q: 90, k: 900 };
-      moves.sort((a, b) => {
-        const scoreA = (a.captured ? pieceVal[a.captured] : 0) + Math.random() * 4;
-        const scoreB = (b.captured ? pieceVal[b.captured] : 0) + Math.random() * 4;
-        return scoreB - scoreA;
-      });
-
-      const chosen = moves[0];
-      const moveResult = game.move(chosen);
-      if (moveResult) executeAnimatedMove(moveResult);
-    }
-
-    // --- UI HUD CONTROLS ---
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2000);
-    }
-
-    function updateHUD() {
-      const statusEl = document.getElementById('status-text');
-      const dotEl = document.getElementById('turn-dot');
-      const turn = game.turn();
-
-      dotEl.style.background = turn === 'w' ? '#FFD54F' : '#FF5722';
-      dotEl.style.boxShadow = turn === 'w' ? '0 0 10px #FFD54F' : '0 0 10px #FF5722';
-
-      if (game.in_checkmate()) {
-        statusEl.textContent = (turn === 'w' ? 'Obsidian' : 'Marble') + ' Wins by Checkmate!';
-        showToast('👑 ድል! Checkmate!');
-      } else if (game.in_draw()) {
-        statusEl.textContent = 'Draw Game';
-      } else {
-        const side = turn === 'w' ? 'Marble (ንጉሥ)' : 'Obsidian (እሳት)';
-        statusEl.textContent = side + (game.in_check() ? ' • CHECK!' : '');
-      }
-    }
-
-    window.toggleMode = function() {
-      vsAI = !vsAI;
-      const btn = document.getElementById('btn-mode');
-      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
-      btn.classList.toggle('active', vsAI);
-      showToast(vsAI ? 'Mode: vs Ethiopian AI' : 'Mode: Pass & Play 2-Player');
-    };
-
-    window.cycleCamera = function() {
-      camPreset = (camPreset + 1) % 3;
-      const btn = document.getElementById('btn-cam');
-      if (camPreset === 0) {
-        camera.position.set(0, 9.5, 9.8);
-        btn.textContent = '🎥 Cam: White';
-      } else if (camPreset === 1) {
-        camera.position.set(0, 9.5, -9.8);
-        btn.textContent = '🎥 Cam: Black';
-      } else {
-        camera.position.set(0, 14.5, 0.01);
-        btn.textContent = '🎥 Cam: Top';
-      }
-      controls.target.set(0, 0, 0);
-    };
-
-    window.toggleActionCam = function() {
-      actionCamEnabled = !actionCamEnabled;
-      const btn = document.getElementById('btn-fx');
-      btn.classList.toggle('active', actionCamEnabled);
-      showToast(actionCamEnabled ? '⚡ Action Cam ON' : '⚡ Action Cam OFF');
-    };
-
-    window.undoMove = function() {
-      if (isAnimating) return;
-      game.undo();
-      if (vsAI && game.turn() === 'b') game.undo();
-      selectSquare(null);
-      syncBoardImmediate();
-      showToast('↩️ Move Undone');
-    };
-
-    window.resetGame = function() {
-      if (isAnimating) return;
-      game.reset();
-      selectSquare(null);
-      syncBoardImmediate();
-      showToast('🔄 New Royal Match Started');
-    };
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // --- MAIN ANIMATION LOOP ---
-    let lastTime = performance.now();
-    function animate(now) {
-      requestAnimationFrame(animate);
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-
-      // Idle floating crowns & crosses
-      Object.values(pieceMeshes).forEach(mesh => {
-        const fg = mesh.userData.floatGroup;
-        if (fg) {
-          fg.position.y = Math.sin(now * 0.003 + mesh.userData.phase) * 0.04;
-          fg.rotation.y += dt * 0.8;
-        }
-      });
-
-      // Step move/capture animations
-      for (let i = activeAnimations.length - 1; i >= 0; i--) {
-        if (activeAnimations[i].update(dt)) activeAnimations.splice(i, 1);
-      }
-
-      // Step shatter physics shards
-      for (let i = activeShards.length - 1; i >= 0; i--) {
-        const s = activeShards[i];
-        s.userData.vel.y -= 9.8 * dt;
-        s.position.addScaledVector(s.userData.vel, dt);
-        s.rotation.x += s.userData.rot.x * dt;
-        s.rotation.y += s.userData.rot.y * dt;
-        if (s.position.y < 0.08) {
-          s.position.y = 0.08;
-          s.userData.vel.y *= -0.45;
-          s.userData.vel.x *= 0.7;
-          s.userData.vel.z *= 0.7;
-        }
-        s.userData.life -= dt * 0.75;
-        if (s.userData.life <= 0) {
-          scene.remove(s);
-          activeShards.splice(i, 1);
-        }
-      }
-
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    syncBoardImmediate();
-    requestAnimationFrame(animate);
-  </script>
-</body>
-</html>
