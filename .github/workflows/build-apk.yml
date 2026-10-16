@@ -24,113 +24,58 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: 4. Verify HTML & Convert to 100% Classic Android Scripts
+      - name: 4. Bundle Offline Three.js & Chess.js
         run: |
           mkdir -p www/lib
 
-          # Find your HTML file anywhere in the repo and copy it to www/index.html
           FOUND_HTML=$(find . -maxdepth 3 -iname "*.html" ! -path "./node_modules/*" ! -path "./android/*" | head -n 1)
-          echo "Found HTML file: $FOUND_HTML"
           if [ -n "$FOUND_HTML" ] && [ "$FOUND_HTML" != "./www/index.html" ]; then
             cp "$FOUND_HTML" www/index.html
           fi
 
-          # Print the size and first 20 lines of www/index.html in GitHub logs to verify it is not empty
-          ls -lh www/index.html
-          head -n 20 www/index.html
-
-          # Download 100% Classic Non-Module Three.js (r128), OrbitControls, and Chess.js
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" -o www/lib/three.min.js
           curl -sL "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" -o www/lib/OrbitControls.js
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" -o www/lib/chess.min.js
 
-          # Convert www/index.html to use 100% classic global scripts (NO ES Modules!)
           node -e '
             const fs = require("fs");
             let html = fs.readFileSync("www/index.html", "utf8");
-
-            // 1. Remove any importmap or external font links
-            html = html.replace(/<script\s+type=["'\'']importmap["'\'']>[\s\S]*?<\/script>/gi, "");
-            html = html.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/gi, "");
-            html = html.replace(/<link[^>]*fonts\.gstatic\.com[^>]*>/gi, "");
-
-            // 2. Remove any existing three.js / chess.js script tags so we do not duplicate them
-            html = html.replace(/<script[^>]*three\.min\.js[^>]*><\/script>/gi, "");
-            html = html.replace(/<script[^>]*OrbitControls\.js[^>]*><\/script>/gi, "");
-            html = html.replace(/<script[^>]*chess\.min\.js[^>]*><\/script>/gi, "");
-
-            // 3. Convert <script type="module"> to standard <script> and strip ES import lines
-            html = html.replace(/<script\s+type=["'\'']module["'\'']>/gi, "<script>");
-            html = html.replace(/import\s+\*\s+as\s+THREE\s+from\s+["'\''][^"'\'']+["'\''];?/g, "");
-            html = html.replace(/import\s+\{\s*OrbitControls\s*\}\s+from\s+["'\''][^"'\'']+["'\''];?/g, "const OrbitControls = THREE.OrbitControls;");
-            html = html.replace(/import\s+\{\s*Chess\s*\}\s+from\s+["'\''][^"'\'']+["'\''];?/g, "");
-
-            // 4. Fix r128 compatibility if CapsuleGeometry or ColorManagement is used
-            const compatShim = `
-              <script src="./lib/three.min.js"><\/script>
-              <script src="./lib/OrbitControls.js"><\/script>
-              <script src="./lib/chess.min.js"><\/script>
-              <script>
-                window.onerror = function(msg, url, line) {
-                  var b = document.getElementById("apk-debug-banner");
-                  if (b) { b.style.display = "block"; b.innerHTML = "ERROR: " + msg + " (Line " + line + ")"; }
-                };
-                if (window.THREE && !THREE.CapsuleGeometry) {
-                  THREE.CapsuleGeometry = function(radius, length, capSub, radSeg) {
-                    return new THREE.CylinderGeometry(radius, radius, length + radius * 2, radSeg || 16);
-                  };
-                }
-              <\/script>
-            `;
-
-            // Inject classic scripts right before </head>
-            if (html.includes("</head>")) {
-              html = html.replace("</head>", compatShim + "</head>");
-            } else {
-              html = compatShim + html;
-            }
-
-            // Inject a visible debug status bar at the top of <body> (auto-hides once 3D canvas renders)
-            const debugBanner = `<div id="apk-debug-banner" style="position:fixed;top:8px;left:8px;right:8px;z-index:999999;background:#1E1B24;color:#FFD54F;padding:8px 12px;border:1px solid #D4AF37;border-radius:8px;font-family:sans-serif;font-size:12px;text-align:center;pointer-events:none;">ንጉሠ ነገሥት • Initializing 3D Engine...</div>
-            <script>
-              setTimeout(function() {
-                var c = document.querySelector("canvas");
-                var b = document.getElementById("apk-debug-banner");
-                if (c && b && b.innerHTML.indexOf("ERROR") === -1) {
-                  b.style.display = "none";
-                } else if (b && b.innerHTML.indexOf("ERROR") === -1) {
-                  b.innerHTML = "No 3D Canvas found! HTML size: " + document.body.innerHTML.length + " chars";
-                }
-              }, 2500);
-            <\/script>`;
-
-            if (html.includes("<body")) {
-              html = html.replace(/<body([^>]*)>/i, "<body$1>" + debugBanner);
-            } else {
-              html = debugBanner + html;
-            }
-
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"'\'']*\/three\.min\.js/g, "./lib/three.min.js");
+            html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^"'\'']*\/examples\/js\/controls\/OrbitControls\.js/g, "./lib/OrbitControls.js");
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/chess\.js\/[^"'\'']*\/chess\.min\.js/g, "./lib/chess.min.js");
             fs.writeFileSync("www/index.html", html);
           '
 
-      - name: 5. Initialize Capacitor & Build Android Project
+      - name: 5. Initialize Capacitor (Nigus App Name + Landscape Lock)
         run: |
-          echo '{"name":"ethiopian-wizards-chess","version":"1.0.0","private":true}' > package.json
-          echo '{"appId":"com.yona.wizardschess","appName":"Negest Chess","webDir":"www"}' > capacitor.config.json
+          echo '{"name":"nigus-chess","version":"1.0.0","private":true}' > package.json
+          echo '{"appId":"com.yonagraphics.niguschess","appName":"ንጉስ Nigus","webDir":"www"}' > capacitor.config.json
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/assets
           npx cap add android
           npx cap sync android
 
-      - name: 6. Generate Custom Ethiopian Crown App Icon Only
+          # Lock Android native app orientation to Landscape & Immersive Fullscreen
+          node -e '
+            const fs = require("fs");
+            const manifestPath = "android/app/src/main/AndroidManifest.xml";
+            let xml = fs.readFileSync(manifestPath, "utf8");
+            xml = xml.replace(
+              /<activity([^>]*?)android:name="\.MainActivity"/,
+              "<activity$1android:name=\".MainActivity\" android:screenOrientation=\"sensorLandscape\""
+            );
+            fs.writeFileSync(manifestPath, xml);
+          '
+
+      - name: 6. Generate Custom Nigus Crown & Yona Graphics Icon
         run: |
           mkdir -p assets
           if [ ! -f "assets/icon.png" ]; then
-            echo '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#0B090E"/><circle cx="512" cy="512" r="380" fill="none" stroke="#D4AF37" stroke-width="18" opacity="0.5"/><path d="M496 190 H528 V240 H578 V272 H528 V330 H496 V272 H446 V240 H496 Z" fill="#FFD54F"/><path d="M312 680 L280 430 L400 510 L512 340 L624 510 L744 430 L712 680 Z" fill="#D4AF37"/><rect x="300" y="705" width="424" height="55" rx="16" fill="#D4AF37"/><circle cx="512" cy="570" r="24" fill="#FF5722"/><circle cx="400" cy="590" r="16" fill="#FF7043"/><circle cx="624" cy="590" r="16" fill="#FF7043"/></svg>' > assets/icon.svg
+            echo '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#09070C"/><circle cx="512" cy="512" r="410" fill="none" stroke="#D4AF37" stroke-width="22" opacity="0.65"/><circle cx="512" cy="512" r="370" fill="none" stroke="#FFE082" stroke-width="6" opacity="0.4"/><path d="M496 170 H528 V225 H582 V257 H528 V320 H496 V257 H442 V225 H496 Z" fill="#FFE082"/><path d="M292 670 L260 410 L395 495 L512 325 L629 495 L764 410 L732 670 Z" fill="#D4AF37"/><rect x="285" y="695" width="454" height="60" rx="18" fill="#FFE082"/><circle cx="512" cy="560" r="28" fill="#FF5722"/><circle cx="395" cy="580" r="18" fill="#FF7043"/><circle cx="629" cy="580" r="18" fill="#FF7043"/></svg>' > assets/icon.svg
             sudo apt-get update && sudo apt-get install -y librsvg2-bin
             rsvg-convert -w 1024 -h 1024 assets/icon.svg -o assets/icon.png
           fi
           cp assets/icon.png assets/icon-only.png
-          npx capacitor-assets generate --android --iconBackgroundColor '#0B090E' --iconBackgroundColorDark '#0B090E' || true
+          npx capacitor-assets generate --android --iconBackgroundColor '#09070C' --iconBackgroundColorDark '#09070C' || true
           npx cap sync android
 
       - name: 7. Compile Debug APK with Gradle
@@ -139,8 +84,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 8. Upload Compiled APK
+      - name: 8. Upload Nigus APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ethiopian-Wizards-Chess-APK
+          name: Nigus-Ethiopian-Chess-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
