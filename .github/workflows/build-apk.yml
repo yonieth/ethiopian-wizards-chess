@@ -24,41 +24,69 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: 4. Prepare Web Folder & Exact Offline ES Modules
+      - name: 4. Bundle Offline Three.js & Fix Android WebView Imports
         run: |
-          # Create the exact folder tree that Three.js ES Modules expect internally
-          mkdir -p www/lib/build
-          mkdir -p www/lib/examples/jsm/controls
+          mkdir -p www/lib
 
-          # Ensure index.html is inside www/index.html
+          # Find index.html if placed in root folder
           if [ -f "index.html" ] && [ ! -f "www/index.html" ]; then
             cp index.html www/index.html
           fi
 
-          # Download matching Three.js 0.160.0 ES Modules & Chess.js
-          curl -sL "https://unpkg.com/three@0.160.0/build/three.module.js" -o www/lib/build/three.module.js
-          curl -sL "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js" -o www/lib/examples/jsm/controls/OrbitControls.js
+          # Download Three.js ES Modules + Classic builds + Chess.js into www/lib/
+          curl -sL "https://unpkg.com/three@0.160.0/build/three.module.js" -o www/lib/three.module.js
+          curl -sL "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js" -o www/lib/OrbitControls.js
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" -o www/lib/chess.min.js
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" -o www/lib/three.min.js
 
-          # Safely rewrite URLs in www/index.html so importmap resolves 100% locally
+          # CRITICAL FIX 1: Inside OrbitControls.js, replace bare 'three' import with './three.module.js'
+          node -e '
+            const fs = require("fs");
+            let oc = fs.readFileSync("www/lib/OrbitControls.js", "utf8");
+            oc = oc.replace(/from\s+["'\'']three["'\'']/g, "from \"./three.module.js\"");
+            oc = oc.replace(/from\s+["'\'']\.\.\/\.\.\/\.\.\/build\/three\.module\.js["'\'']/g, "from \"./three.module.js\"");
+            fs.writeFileSync("www/lib/OrbitControls.js", oc);
+          '
+
+          # CRITICAL FIX 2: Rewrite www/index.html imports so Android WebView doesn't need importmap
           node -e '
             const fs = require("fs");
             let html = fs.readFileSync("www/index.html", "utf8");
 
-            // 1. Replace Three.js 0.160.0 importmap paths with matching local directory structure
-            html = html.replace(/https:\/\/unpkg\.com\/three@[^\/]+\/build\/three\.module\.js/g, "./lib/build/three.module.js");
-            html = html.replace(/https:\/\/unpkg\.com\/three@[^\/]+\/examples\/jsm\//g, "./lib/examples/jsm/");
-            html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^\/]+\/build\/three\.module\.js/g, "./lib/build/three.module.js");
-            html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^\/]+\/examples\/jsm\//g, "./lib/examples/jsm/");
+            // Remove importmap block (not needed when paths are direct)
+            html = html.replace(/<script\s+type=["'\'']importmap["'\'']>[\s\S]*?<\/script>/gi, "");
 
-            // 2. Replace Chess.js & classic Three.js if used
-            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/chess\.js\/[^"]+\/chess\.min\.js/g, "./lib/chess.min.js");
-            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"]+\/three\.min\.js/g, "./lib/three.min.js");
+            // Rewrite ES module imports inside index.html directly to ./lib/
+            html = html.replace(/from\s+["'\'']three["'\'']/g, "from \"./lib/three.module.js\"");
+            html = html.replace(/from\s+["'\'']three\/addons\/controls\/OrbitControls\.js["'\'']/g, "from \"./lib/OrbitControls.js\"");
+            html = html.replace(/from\s+["'\'']https:\/\/[^"'\'']*three\.module\.js["'\'']/g, "from \"./lib/three.module.js\"");
+            html = html.replace(/from\s+["'\'']https:\/\/[^"'\'']*OrbitControls\.js["'\'']/g, "from \"./lib/OrbitControls.js\"");
 
-            // 3. Remove external Google Font stylesheet tags that can block offline rendering
+            // Rewrite standard <script src="..."> tags if used
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/chess\.js\/[^"'\'']*\/chess\.min\.js/g, "./lib/chess.min.js");
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"'\'']*\/three\.min\.js/g, "./lib/three.min.js");
+            html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^"'\'']*\/examples\/js\/controls\/OrbitControls\.js/g, "./lib/OrbitControls.js");
+
+            // Strip external Google Fonts links so offline mode never hangs
             html = html.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/gi, "");
             html = html.replace(/<link[^>]*fonts\.gstatic\.com[^>]*>/gi, "");
+
+            // Inject an on-screen error catcher right after <head> so any mobile error is visible
+            const errorOverlay = `<script>
+              window.addEventListener("error", function(e) {
+                var d = document.createElement("div");
+                d.style.cssText = "position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#300;color:#FFD54F;padding:12px;border:1px solid #FF5722;font-family:monospace;font-size:12px;border-radius:8px;";
+                d.textContent = "JS Error: " + e.message + " (line " + e.lineno + ")";
+                document.body.appendChild(d);
+              });
+              window.addEventListener("unhandledrejection", function(e) {
+                var d = document.createElement("div");
+                d.style.cssText = "position:fixed;top:60px;left:10px;right:10px;z-index:99999;background:#300;color:#FFD54F;padding:12px;border:1px solid #FF5722;font-family:monospace;font-size:12px;border-radius:8px;";
+                d.textContent = "Module Error: " + (e.reason && e.reason.message ? e.reason.message : e.reason);
+                document.body.appendChild(d);
+              });
+            <\/script>`;
+            html = html.replace(/<head>/i, "<head>" + errorOverlay);
 
             fs.writeFileSync("www/index.html", html);
           '
