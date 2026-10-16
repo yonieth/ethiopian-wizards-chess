@@ -128,3 +128,840 @@
     /* --- SINGLE-LEVEL COMPACT LANDSCAPE HUD --- */
     .hud-bar {
       position: fixed; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; align-items: center; gap: 8px;
+      background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(212, 175, 55, 0.32); border-radius: 999px;
+      padding: 5px 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+      max-width: 96vw; white-space: nowrap;
+    }
+    .top-hud { top: max(8px, env(safe-area-inset-top)); justify-content: space-between; width: min(640px, 95vw); }
+    .bottom-hud { bottom: max(8px, env(safe-area-inset-bottom)); gap: 6px; }
+
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .crown-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-bright);
+    }
+    .brand-title { font-weight: 800; font-size: 13px; letter-spacing: 0.6px; color: var(--gold-bright); }
+    .turn-pill {
+      font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
+      background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--text);
+    }
+    .btn {
+      appearance: none; border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07); color: var(--text);
+      padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn.active {
+      background: rgba(212, 175, 55, 0.25); border-color: var(--gold); color: var(--gold-bright);
+    }
+    #toast {
+      position: fixed; top: 54px; left: 50%; transform: translateX(-50%);
+      z-index: 20; background: rgba(14, 11, 20, 0.95); color: var(--gold-bright);
+      border: 1px solid var(--gold); border-radius: 999px; padding: 5px 16px;
+      font-size: 12px; font-weight: 700; pointer-events: none; opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 600px) and (orientation: portrait) {
+      .menu-card { grid-template-columns: 1fr; padding: 18px; gap: 14px; }
+      .menu-hero { border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.22); padding-right: 0; padding-bottom: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- ETHIOPIAN ROYAL FAMILY MAIN MENU -->
+  <div id="main-menu">
+    <div class="menu-card">
+      <div class="menu-hero">
+        <div class="royal-badge">👑 Imperial Aksumite Edition</div>
+        <h1 class="geez-title">ንጉስ</h1>
+        <div class="eng-title">NIGUS CHESS</div>
+        <p class="menu-sub">3D Ethiopian Royal Wizard's Chess. Command the Ivory Marble &amp; Gold Dynasty against the Volcanic Obsidian Empire.</p>
+        
+        <!-- Yona Graphics Official Branding with Uploaded Vector Logo -->
+        <div class="yona-brand">
+          <div class="yona-logo-box">
+            <svg viewBox="0 0 100 100" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Spiral Circle -->
+              <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
+              <!-- Inner Swirl Curve -->
+              <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
+              <!-- Top-Right Cursor Pointer Arrow -->
+              <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#050507"/>
+              <!-- Bottom Fountain Pen Nib -->
+              <path d="M 37 56 L 37 64 L 34 69 L 46 93 L 58 69 L 53 63" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- Nib Center Slit -->
+              <line x1="46" y1="67" x2="46" y2="91" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="yona-text">
+            <span class="yona-dev-label">Designed &amp; Developed By</span>
+            <span class="yona-dev-name">YONA GRAPHICS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions">
+        <button class="menu-btn primary" onclick="startMatch(true)">
+          <span>⚔️ New Game (vs Royal AI)</span>
+          <span>▶</span>
+        </button>
+        <button class="menu-btn" onclick="startMatch(false)">
+          <span>👥 2-Player Pass &amp; Play</span>
+          <span>▶</span>
+        </button>
+        <div class="menu-row">
+          <button class="menu-btn" id="menu-diff" onclick="cycleDifficulty()">
+            <span>🧠 AI:</span>
+            <span id="diff-label" style="color:var(--gold-bright)">Ras (Med)</span>
+          </button>
+          <button class="menu-btn" id="menu-sfx" onclick="toggleSound()">
+            <span>🔊 Sound:</span>
+            <span id="sfx-label" style="color:var(--gold-bright)">ON</span>
+          </button>
+        </div>
+        <button class="menu-btn" id="btn-resume" onclick="closeMenu()" style="display:none; border-color:rgba(255,255,255,0.25);">
+          <span>🛡️ Resume Current Battle</span>
+          <span>↵</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE-LEVEL TOP HUD -->
+  <div class="hud-bar top-hud">
+    <div class="brand">
+      <button class="btn" onclick="openMenu()" style="padding:4px 10px;">☰ Menu</button>
+      <div class="crown-dot" id="turn-dot"></div>
+      <span class="brand-title">ንጉስ • NIGUS</span>
+    </div>
+    <div class="turn-pill" id="status-text">Marble's Turn (ንጉስ)</div>
+  </div>
+
+  <div id="toast">⚔️ Royal Capture!</div>
+
+  <!-- SINGLE-LEVEL BOTTOM HUD -->
+  <div class="hud-bar bottom-hud">
+    <button class="btn active" id="btn-mode" onclick="toggleMode()">🤖 vs AI</button>
+    <button class="btn" id="btn-cam" onclick="cycleCamera()">🎥 View: Marble</button>
+    <button class="btn active" id="btn-fx" onclick="toggleActionCam()">⚡ Action Cam</button>
+    <button class="btn" onclick="undoMove()">↩️ Undo</button>
+    <button class="btn" onclick="resetGame()">🔄 Restart</button>
+  </div>
+
+  <script>
+    // Try locking landscape on mobile browsers/WebViews that support Screen Orientation API
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {}
+
+    // --- SOUND SYNTHESIS ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (type === 'select') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(540, now);
+          osc.frequency.exponentialRampToValueAtTime(820, now + 0.08);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now); osc.stop(now + 0.09);
+        } else if (type === 'move') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.exponentialRampToValueAtTime(92, now + 0.16);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+          osc.start(now); osc.stop(now + 0.17);
+        } else if (type === 'shatter') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(34, now + 0.45);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
+          osc.start(now); osc.stop(now + 0.46);
+        }
+      } catch (e) {}
+    }
+
+    // --- THREE.JS SCENE & PROCEDURAL STUDIO REFLECTION ENVIRONMENT ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x09070C);
+    scene.fog = new THREE.FogExp2(0x09070C, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.25, 100);
+    camera.position.set(0, 8.2, 9.4);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const ControlsClass = THREE.OrbitControls || window.OrbitControls;
+    const controls = new ControlsClass(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI / 2.18;
+    controls.minDistance = 6.2; // Prevents camera from clipping inside pieces!
+    controls.maxDistance = 16.5;
+    controls.target.set(0, 0.3, 0);
+
+    // --- LIGHTING (Warm Royal Gold + Volcanic Rim) ---
+    scene.add(new THREE.HemisphereLight(0xFFF6E0, 0x1A1426, 0.75));
+
+    const sunLight = new THREE.DirectionalLight(0xFFF0C8, 1.55);
+    sunLight.position.set(7, 15, 9);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    const goldRim = new THREE.PointLight(0xFFD54F, 1.2, 22);
+    goldRim.position.set(6, 5, 6);
+    scene.add(goldRim);
+
+    const emberRim = new THREE.PointLight(0xFF5722, 1.35, 22);
+    emberRim.position.set(-6, 5, -6);
+    scene.add(emberRim);
+
+    // --- LUXURY PBR MATERIALS ---
+    const matMarble = new THREE.MeshStandardMaterial({
+      color: 0xF5F0E6, roughness: 0.18, metalness: 0.06
+    });
+    const matGold = new THREE.MeshStandardMaterial({
+      color: 0xE5B83B, roughness: 0.22, metalness: 0.88,
+      emissive: 0x4A3200, emissiveIntensity: 0.28
+    });
+    const matObsidian = new THREE.MeshStandardMaterial({
+      color: 0x17141F, roughness: 0.14, metalness: 0.55
+    });
+    const matEmber = new THREE.MeshStandardMaterial({
+      color: 0xFF5722, roughness: 0.25, metalness: 0.35,
+      emissive: 0xFF3D00, emissiveIntensity: 0.85
+    });
+
+    const matSqLight = new THREE.MeshStandardMaterial({ color: 0xEDE6D6, roughness: 0.28, metalness: 0.08 });
+    const matSqDark = new THREE.MeshStandardMaterial({ color: 0x1E1A28, roughness: 0.22, metalness: 0.25 });
+    const matPlinth = new THREE.MeshStandardMaterial({ color: 0x110E17, roughness: 0.35, metalness: 0.6 });
+
+    // --- AKSUMITE ARCHITECTURAL CHESS BOARD ---
+    const boardGroup = new THREE.Group();
+    scene.add(boardGroup);
+
+    const squareMeshes = {};
+    const highlightMeshes = {};
+
+    // Stepped Aksumite Plinth Base (Offsets prevent any Z-fighting)
+    const plinth1 = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.32, 9.4), matPlinth);
+    plinth1.position.y = -0.30; plinth1.receiveShadow = true; boardGroup.add(plinth1);
+
+    const plinthGold = new THREE.Mesh(new THREE.BoxGeometry(8.52, 0.24, 8.52), matGold);
+    plinthGold.position.y = -0.14; boardGroup.add(plinthGold);
+
+    const files = ['a','b','c','d','e','f','g','h'];
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const sqName = files[f] + (8 - r);
+        const isLight = (r + f) % 2 === 0;
+        const sq = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.14, 0.98), isLight ? matSqLight : matSqDark);
+        sq.position.set(f - 3.5, 0, r - 3.5);
+        sq.receiveShadow = true;
+        sq.userData = { square: sqName };
+        boardGroup.add(sq);
+        squareMeshes[sqName] = sq;
+
+        const hlGeo = new THREE.RingGeometry(0.28, 0.41, 28);
+        hlGeo.rotateX(-Math.PI / 2);
+        const hlMat = new THREE.MeshBasicMaterial({
+          color: 0xFFD54F, side: THREE.DoubleSide, transparent: true, opacity: 0.9,
+          polygonOffset: true, polygonOffsetFactor: -2
+        });
+        const hl = new THREE.Mesh(hlGeo, hlMat);
+        hl.position.set(f - 3.5, 0.082, r - 3.5);
+        hl.visible = false;
+        boardGroup.add(hl);
+        highlightMeshes[sqName] = hl;
+      }
+    }
+
+    // --- GLITCH-FREE SCULPTED ETHIOPIAN ROYAL PIECES ---
+    function createEthiopianPiece(type, color) {
+      const group = new THREE.Group();
+      const primaryMat = color === 'w' ? matMarble : matObsidian;
+      const accentMat = color === 'w' ? matGold : matEmber;
+      const dir = color === 'w' ? -1 : 1;
+
+      // Multi-tiered Royal Pedestal
+      const baseBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.10, 24), primaryMat);
+      baseBottom.position.y = 0.05; baseBottom.castShadow = true; group.add(baseBottom);
+
+      const baseGoldRing = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.37, 0.05, 24), accentMat);
+      baseGoldRing.position.y = 0.125; group.add(baseGoldRing);
+
+      const baseTop = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.34, 0.08, 24), primaryMat);
+      baseTop.position.y = 0.19; group.add(baseTop);
+
+      // FloatGroup ONLY bobs vertically; SpinGroup ONLY spins centered crown emblems (NO clipping!)
+      const floatGroup = new THREE.Group();
+      const spinGroup = new THREE.Group();
+      floatGroup.add(spinGroup);
+      group.add(floatGroup);
+
+      if (type === 'p') {
+        // GASHA JAGRE (Imperial Shield Warrior)
+        const tunic = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.26, 0.46, 20), primaryMat);
+        tunic.position.y = 0.45; tunic.castShadow = true; group.add(tunic);
+
+        const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 10, 20), accentMat);
+        collar.rotation.x = Math.PI / 2; collar.position.y = 0.67; group.add(collar);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 20, 20), primaryMat);
+        head.position.y = 0.82; group.add(head);
+
+        const headband = new THREE.Mesh(new THREE.TorusGeometry(0.146, 0.018, 8, 20), accentMat);
+        headband.rotation.x = Math.PI / 2; headband.position.y = 0.85; group.add(headband);
+
+        // Conical Ethiopian Gasha Shield & Spear (bobs gently without spinning into body)
+        const shield = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.09, 20), accentMat);
+        shield.rotation.x = dir * (Math.PI / 2);
+        shield.position.set(0, 0.52, dir * 0.23);
+        floatGroup.add(shield);
+
+      } else if (type === 'r') {
+        // HAWILT STELE (Carved Aksumite Obelisk — Fixed Z-fighting with stepped tiers!)
+        const steleBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.38), primaryMat);
+        steleBase.position.y = 0.29; group.add(steleBase);
+
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.78, 0.28), primaryMat);
+        pillar.position.y = 0.75; pillar.castShadow = true; group.add(pillar);
+
+        // Stepped Aksumite horizontal window bands
+        for (let i = 0; i < 3; i++) {
+          const band = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.04, 0.30), accentMat);
+          band.position.y = 0.62 + i * 0.18;
+          group.add(band);
+        }
+
+        // False Door carved cleanly in front & back (depth 0.31 > pillar 0.28 so ZERO flickering!)
+        const falseDoor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.31), accentMat);
+        falseDoor.position.y = 0.42; group.add(falseDoor);
+
+        // Rounded Stela Crown Apex (thickness 0.24 < pillar 0.28 so ZERO Z-fighting!)
+        const apex = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.24, 24), accentMat);
+        apex.rotation.x = Math.PI / 2;
+        apex.position.y = 1.16;
+        group.add(apex);
+
+      } else if (type === 'n') {
+        // FERESEGNA (Sculpted Royal Warhorse)
+        const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.28, 0.34, 20), primaryMat);
+        pedestal.position.y = 0.39; group.add(pedestal);
+
+        const chest = new THREE.Mesh(new THREE.SphereGeometry(0.21, 18, 18), primaryMat);
+        chest.position.set(0, 0.62, dir * 0.04); group.add(chest);
+
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 0.44, 16), primaryMat);
+        neck.position.set(0, 0.86, dir * 0.06);
+        neck.rotation.x = dir * 0.28;
+        neck.castShadow = true; group.add(neck);
+
+        const head = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 16), primaryMat);
+        head.rotation.x = dir * (Math.PI / 2.3);
+        head.position.set(0, 1.02, dir * 0.20);
+        group.add(head);
+
+        // Royal Gold/Ember Crest Mane (fixed to neck, bobs gently)
+        const mane = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.12), accentMat);
+        mane.position.set(0, 0.88, -dir * 0.08);
+        mane.rotation.x = dir * 0.25;
+        floatGroup.add(mane);
+
+      } else if (type === 'b') {
+        // ABUNA (High Priest with Mitre & Spinning Lalibela Cross)
+        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.29, 0.78, 24), primaryMat);
+        robe.position.y = 0.61; robe.castShadow = true; group.add(robe);
+
+        const sash = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.025, 10, 24), accentMat);
+        sash.rotation.x = Math.PI / 2; sash.position.y = 0.72; group.add(sash);
+
+        const mitre = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 20), primaryMat);
+        mitre.position.y = 1.14; group.add(mitre);
+
+        // Centered Spinning Lalibela Processional Cross
+        const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.30, 0.06), accentMat);
+        const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.06), accentMat);
+        vBar.position.y = 1.44; hBar.position.y = 1.47;
+        spinGroup.add(vBar); spinGroup.add(hBar);
+
+      } else if (type === 'q') {
+        // ITEGE (Empress of Ethiopia with Tiered Gown & Solar Halo)
+        const gown = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.31, 0.92, 24), primaryMat);
+        gown.position.y = 0.68; gown.castShadow = true; group.add(gown);
+
+        const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.12, 20), accentMat);
+        collar.position.y = 1.16; group.add(collar);
+
+        const tiara = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.18, 12), accentMat);
+        tiara.position.y = 1.30; group.add(tiara);
+
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 12, 28), accentMat);
+        halo.position.y = 1.58;
+        spinGroup.add(halo);
+
+      } else if (type === 'k') {
+        // NIGUSE NEGEST (Emperor with Imperial Octagonal Crown & Lalibela Cross)
+        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.33, 1.02, 24), primaryMat);
+        robe.position.y = 0.73; robe.castShadow = true; group.add(robe);
+
+        const capeRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 12, 24), accentMat);
+        capeRing.rotation.x = Math.PI / 2; capeRing.position.y = 1.18; group.add(capeRing);
+
+        const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.21, 0.24, 8), accentMat);
+        crownBase.position.y = 1.34; group.add(crownBase);
+
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 20), primaryMat);
+        dome.position.y = 1.48; group.add(dome);
+
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.34, 0.075), accentMat);
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.075, 0.075), accentMat);
+        crossV.position.y = 1.80; crossH.position.y = 1.84;
+        spinGroup.add(crossV); spinGroup.add(crossH);
+      }
+
+      group.userData = { type, color, floatGroup, spinGroup, phase: Math.random() * Math.PI * 2 };
+      return group;
+    }
+
+    // --- CHESS ENGINE & MENU STATE ---
+    const game = new Chess();
+    const pieceMeshes = {};
+    let selectedSquare = null;
+    let legalMovesForSelected = [];
+    let vsAI = true;
+    let aiDifficulty = 1; // 0: Dejazmach (Easy), 1: Ras (Med), 2: Nigus (Hard)
+    let actionCamEnabled = true;
+    let isAnimating = false;
+    let camPreset = 0;
+
+    function squareToWorld(sq) {
+      const f = files.indexOf(sq[0]);
+      const r = 8 - parseInt(sq[1], 10);
+      return new THREE.Vector3(f - 3.5, 0.07, r - 3.5);
+    }
+
+    function syncBoardImmediate() {
+      Object.values(pieceMeshes).forEach(m => boardGroup.remove(m));
+      for (const k in pieceMeshes) delete pieceMeshes[k];
+
+      const board = game.board();
+      for (let r = 0; r < 8; r++) {
+        for (let f = 0; f < 8; f++) {
+          const p = board[r][f];
+          if (p) {
+            const sq = files[f] + (8 - r);
+            const mesh = createEthiopianPiece(p.type, p.color);
+            mesh.position.copy(squareToWorld(sq));
+            mesh.userData.square = sq;
+            boardGroup.add(mesh);
+            pieceMeshes[sq] = mesh;
+          }
+        }
+      }
+      updateHUD();
+    }
+
+    // --- SHATTER PHYSICS ---
+    const activeShards = [];
+    function spawnShatter(worldPos, color) {
+      playSound('shatter');
+      const mat = color === 'w' ? matMarble : matObsidian;
+      const accent = color === 'w' ? matGold : matEmber;
+      for (let i = 0; i < 34; i++) {
+        const size = 0.06 + Math.random() * 0.10;
+        const shard = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(size, 0),
+          i % 3 === 0 ? accent : mat
+        );
+        shard.position.copy(worldPos).add(new THREE.Vector3(0, 0.35 + Math.random() * 0.5, 0));
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 3.5;
+        shard.userData = {
+          vel: new THREE.Vector3(Math.cos(angle) * speed, 2.2 + Math.random() * 3.0, Math.sin(angle) * speed),
+          rot: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8),
+          life: 1.0
+        };
+        scene.add(shard);
+        activeShards.push(shard);
+      }
+    }
+
+    // --- MOVE & STRIKE ANIMATION ---
+    const activeAnimations = [];
+    function executeAnimatedMove(moveObj, onComplete) {
+      isAnimating = true;
+      clearHighlights();
+
+      const fromSq = moveObj.from;
+      const toSq = moveObj.to;
+      const attacker = pieceMeshes[fromSq];
+      const defender = pieceMeshes[toSq];
+
+      const startPos = squareToWorld(fromSq);
+      const endPos = squareToWorld(toSq);
+
+      const savedCamPos = camera.position.clone();
+      const savedTarget = controls.target.clone();
+
+      if (defender && actionCamEnabled) {
+        showToast('⚔️ Royal Strike on ' + toSq.toUpperCase() + '!');
+        const mid = startPos.clone().lerp(endPos, 0.65);
+        camera.position.set(mid.x + 2.8, 3.8, mid.z + 2.8);
+        controls.target.copy(endPos);
+      } else {
+        playSound('move');
+      }
+
+      const duration = defender ? 0.82 : 0.40;
+      activeAnimations.push({
+        elapsed: 0,
+        duration,
+        shattered: false,
+        update(dt) {
+          this.elapsed += dt;
+          const t = Math.min(this.elapsed / this.duration, 1);
+
+          if (attacker) {
+            if (!defender) {
+              attacker.position.lerpVectors(startPos, endPos, t);
+              attacker.position.y = 0.07 + Math.sin(t * Math.PI) * 0.42;
+            } else {
+              if (t < 0.65) {
+                const subT = t / 0.65;
+                attacker.position.lerpVectors(startPos, endPos, subT * 0.82);
+                attacker.position.y = 0.07 + Math.sin(subT * Math.PI) * 0.62;
+              } else {
+                const subT = (t - 0.65) / 0.35;
+                attacker.position.lerpVectors(startPos.clone().lerp(endPos, 0.82), endPos, subT);
+                attacker.position.y = 0.07;
+                if (!this.shattered) {
+                  this.shattered = true;
+                  boardGroup.remove(defender);
+                  spawnShatter(endPos, defender.userData.color);
+                }
+              }
+            }
+          }
+
+          if (t >= 1) {
+            if (defender && actionCamEnabled) {
+              setTimeout(() => {
+                camera.position.copy(savedCamPos);
+                controls.target.copy(savedTarget);
+              }, 360);
+            }
+            syncBoardImmediate();
+            isAnimating = false;
+            if (onComplete) onComplete();
+            return true;
+          }
+          return false;
+        }
+      });
+    }
+
+    // --- TOUCH & RAYCASTING ---
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    function clearHighlights() {
+      Object.values(highlightMeshes).forEach(h => (h.visible = false));
+    }
+
+    function selectSquare(sq) {
+      clearHighlights();
+      selectedSquare = sq;
+      if (!sq) return;
+
+      playSound('select');
+      legalMovesForSelected = game.moves({ square: sq, verbose: true });
+      highlightMeshes[sq].material.color.setHex(0x00E5FF);
+      highlightMeshes[sq].visible = true;
+
+      legalMovesForSelected.forEach(m => {
+        const hl = highlightMeshes[m.to];
+        hl.material.color.setHex(m.captured ? 0xFF3D00 : 0xFFD54F);
+        hl.visible = true;
+      });
+    }
+
+    function handleBoardTap(clientX, clientY) {
+      if (!document.getElementById('main-menu').classList.contains('hidden')) return;
+      if (isAnimating || game.game_over()) return;
+      if (vsAI && game.turn() === 'b') return;
+
+      pointer.x = (clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      const hits = raycaster.intersectObjects(boardGroup.children, true);
+      let tappedSq = null;
+      for (const hit of hits) {
+        let obj = hit.object;
+        while (obj && !obj.userData.square) obj = obj.parent;
+        if (obj && obj.userData.square) {
+          tappedSq = obj.userData.square;
+          break;
+        }
+      }
+
+      if (!tappedSq) {
+        selectSquare(null);
+        return;
+      }
+
+      const chosenMove = legalMovesForSelected.find(m => m.to === tappedSq);
+      if (selectedSquare && chosenMove) {
+        const moveResult = game.move({ from: selectedSquare, to: tappedSq, promotion: 'q' });
+        selectedSquare = null;
+        legalMovesForSelected = [];
+        if (moveResult) {
+          executeAnimatedMove(moveResult, () => {
+            if (vsAI && !game.game_over() && game.turn() === 'b') {
+              setTimeout(makeAIMove, 320);
+            }
+          });
+        }
+        return;
+      }
+
+      const pieceOnSq = game.get(tappedSq);
+      if (pieceOnSq && pieceOnSq.color === game.turn()) {
+        selectSquare(tappedSq);
+      } else {
+        selectSquare(null);
+      }
+    }
+
+    let downPos = { x: 0, y: 0 };
+    renderer.domElement.addEventListener('pointerdown', e => {
+      downPos = { x: e.clientX, y: e.clientY };
+    });
+    renderer.domElement.addEventListener('pointerup', e => {
+      const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+      if (dist < 12) handleBoardTap(e.clientX, e.clientY);
+    });
+
+    // --- ETHIOPIAN ROYAL AI ---
+    function makeAIMove() {
+      if (game.game_over()) return;
+      const moves = game.moves({ verbose: true });
+      if (!moves.length) return;
+
+      const pieceVal = { p: 10, n: 30, b: 33, r: 50, q: 95, k: 900 };
+      moves.sort((a, b) => {
+        const noise = aiDifficulty === 0 ? 25 : aiDifficulty === 1 ? 6 : 1;
+        const centerA = (a.to === 'd4' || a.to === 'e4' || a.to === 'd5' || a.to === 'e5') ? 8 : 0;
+        const centerB = (b.to === 'd4' || b.to === 'e4' || b.to === 'd5' || b.to === 'e5') ? 8 : 0;
+        const scoreA = (a.captured ? pieceVal[a.captured] : 0) + centerA + Math.random() * noise;
+        const scoreB = (b.captured ? pieceVal[b.captured] : 0) + centerB + Math.random() * noise;
+        return scoreB - scoreA;
+      });
+
+      const moveResult = game.move(moves[0]);
+      if (moveResult) executeAnimatedMove(moveResult);
+    }
+
+    // --- MENU & HUD FUNCTIONS ---
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2100);
+    }
+
+    function updateHUD() {
+      const statusEl = document.getElementById('status-text');
+      const dotEl = document.getElementById('turn-dot');
+      const turn = game.turn();
+
+      dotEl.style.background = turn === 'w' ? '#FFE082' : '#FF5722';
+      dotEl.style.boxShadow = turn === 'w' ? '0 0 10px #FFE082' : '0 0 10px #FF5722';
+
+      if (game.in_checkmate()) {
+        statusEl.textContent = (turn === 'w' ? 'Obsidian' : 'Marble') + ' Wins! (ድል)';
+        showToast('👑 ድል! Royal Checkmate!');
+      } else if (game.in_draw()) {
+        statusEl.textContent = 'Royal Draw';
+      } else {
+        const side = turn === 'w' ? 'Marble (ንጉስ)' : 'Obsidian (እሳት)';
+        statusEl.textContent = side + (game.in_check() ? ' • CHECK!' : '');
+      }
+    }
+
+    window.startMatch = function(aiMode) {
+      vsAI = aiMode;
+      const btn = document.getElementById('btn-mode');
+      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
+      btn.classList.toggle('active', vsAI);
+      game.reset();
+      selectSquare(null);
+      syncBoardImmediate();
+      document.getElementById('btn-resume').style.display = 'flex';
+      closeMenu();
+      showToast(vsAI ? '⚔️ Royal Match vs AI Started' : '⚔️ 2-Player Royal Duel Started');
+    };
+
+    window.openMenu = function() {
+      document.getElementById('main-menu').classList.remove('hidden');
+    };
+
+    window.closeMenu = function() {
+      document.getElementById('main-menu').classList.add('hidden');
+    };
+
+    window.cycleDifficulty = function() {
+      aiDifficulty = (aiDifficulty + 1) % 3;
+      const names = ['Dejazmach (Easy)', 'Ras (Med)', 'Nigus (Hard)'];
+      document.getElementById('diff-label').textContent = names[aiDifficulty];
+    };
+
+    window.toggleSound = function() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sfx-label').textContent = soundEnabled ? 'ON' : 'OFF';
+    };
+
+    window.toggleMode = function() {
+      vsAI = !vsAI;
+      const btn = document.getElementById('btn-mode');
+      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
+      btn.classList.toggle('active', vsAI);
+      showToast(vsAI ? 'Mode: vs Royal AI' : 'Mode: 2-Player Duel');
+    };
+
+    window.cycleCamera = function() {
+      camPreset = (camPreset + 1) % 3;
+      const btn = document.getElementById('btn-cam');
+      if (camPreset === 0) {
+        camera.position.set(0, 8.2, 9.4);
+        btn.textContent = '🎥 View: Marble';
+      } else if (camPreset === 1) {
+        camera.position.set(0, 8.2, -9.4);
+        btn.textContent = '🎥 View: Obsidian';
+      } else {
+        camera.position.set(0, 13.8, 0.01);
+        btn.textContent = '🎥 View: Tactical';
+      }
+      controls.target.set(0, 0.3, 0);
+    };
+
+    window.toggleActionCam = function() {
+      actionCamEnabled = !actionCamEnabled;
+      document.getElementById('btn-fx').classList.toggle('active', actionCamEnabled);
+      showToast(actionCamEnabled ? '⚡ Action Cam ON' : '⚡ Action Cam OFF');
+    };
+
+    window.undoMove = function() {
+      if (isAnimating) return;
+      game.undo();
+      if (vsAI && game.turn() === 'b') game.undo();
+      selectSquare(null);
+      syncBoardImmediate();
+      showToast('↩️ Move Undone');
+    };
+
+    window.resetGame = function() {
+      if (isAnimating) return;
+      game.reset();
+      selectSquare(null);
+      syncBoardImmediate();
+      showToast('🔄 New Match Started');
+    };
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- MAIN RENDER LOOP ---
+    let lastTime = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      // Smooth cinematic turntable rotation while in Main Menu
+      const menuOpen = !document.getElementById('main-menu').classList.contains('hidden');
+      if (menuOpen) {
+        const angle = now * 0.00025;
+        camera.position.x = Math.sin(angle) * 10.5;
+        camera.position.z = Math.cos(angle) * 10.5;
+        camera.position.y = 7.2;
+        controls.target.set(0, 0.4, 0);
+      }
+
+      // Glitch-free idle animations: floatGroup only breathes vertically, spinGroup spins centered emblems
+      Object.values(pieceMeshes).forEach(mesh => {
+        const fg = mesh.userData.floatGroup;
+        const sg = mesh.userData.spinGroup;
+        if (fg) fg.position.y = Math.sin(now * 0.003 + mesh.userData.phase) * 0.035;
+        if (sg) sg.rotation.y += dt * 0.9;
+      });
+
+      for (let i = activeAnimations.length - 1; i >= 0; i--) {
+        if (activeAnimations[i].update(dt)) activeAnimations.splice(i, 1);
+      }
+
+      for (let i = activeShards.length - 1; i >= 0; i--) {
+        const s = activeShards[i];
+        s.userData.vel.y -= 9.8 * dt;
+        s.position.addScaledVector(s.userData.vel, dt);
+        s.rotation.x += s.userData.rot.x * dt;
+        s.rotation.y += s.userData.rot.y * dt;
+        if (s.position.y < 0.08) {
+          s.position.y = 0.08;
+          s.userData.vel.y *= -0.45;
+          s.userData.vel.x *= 0.7;
+          s.userData.vel.z *= 0.7;
+        }
+        s.userData.life -= dt * 0.75;
+        if (s.userData.life <= 0) {
+          scene.remove(s);
+          activeShards.splice(i, 1);
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    syncBoardImmediate();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
