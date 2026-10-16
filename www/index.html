@@ -3,1474 +3,1159 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>ንጉስ • Nigus Ethiopian Wizard's Chess</title>
+  <title>ንጉስ • Nigus Ethiopian Royal Chess</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
   <style>
     :root {
-      --md-bg: #0D0B0A;
-      --md-surface: rgba(28, 25, 23, 0.84);
-      --md-surface-high: rgba(45, 40, 36, 0.92);
-      --md-primary: #F5C542;
-      --md-primary-container: rgba(245, 197, 66, 0.20);
-      --md-ember: #FF5722;
-      --md-on-surface: #F5EFE6;
-      --md-on-surface-variant: #C7B9A5;
-      --md-outline: rgba(245, 197, 66, 0.28);
+      --bg: #1D1612;
+      --surface: rgba(34, 26, 22, 0.88);
+      --gold: #D4AF37;
+      --gold-bright: #FFE082;
+      --gold-deep: #9A7B1C;
+      --ember: #FF5722;
+      --text: #F7F4EB;
+      --muted: #C8BCA8;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      width: 100%;
-      height: 100%;
+      margin: 0; padding: 0; width: 100%; height: 100%;
       overflow: hidden;
-      background-color: var(--md-bg);
+      background: radial-gradient(circle at 50% 35%, #2E221B 0%, #1D1612 70%, #140F0C 100%);
+      color: var(--text);
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      color: var(--md-on-surface);
-      overscroll-behavior: none;
-      touch-action: none;
+      overscroll-behavior: none; touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    #canvas-container { position: fixed; inset: 0; z-index: 1; }
+
+    /* --- 1. CINEMATIC OPENING SPLASH ANIMATION --- */
+    #intro-splash {
+      position: fixed; inset: 0; z-index: 100;
+      background: radial-gradient(circle at center, #2B1F17 0%, #140E0B 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.85s ease, visibility 0.85s ease;
+    }
+    #intro-splash.fade-out {
+      opacity: 0; visibility: hidden; pointer-events: none;
+    }
+    .splash-tibeb {
+      position: absolute; top: 0; left: 0; right: 0; height: 6px;
+      background: repeating-linear-gradient(90deg, #1B8A3D 0px, #1B8A3D 28px, #FCD116 28px, #FCD116 56px, #D62828 56px, #D62828 84px, #D4AF37 84px, #D4AF37 112px);
+    }
+    .splash-logo-wrap {
+      width: 86px; height: 86px; border-radius: 22px;
+      background: #080605; border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 36px rgba(212, 175, 55, 0.45);
+      opacity: 0; transform: scale(0.6) translateY(15px);
+      animation: splashLogoIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+    }
+    .splash-geez {
+      font-size: clamp(46px, 8vw, 68px); font-weight: 900; margin: 12px 0 0 0;
+      background: linear-gradient(180deg, #FFF8E1 0%, #FFD54F 50%, #B8860B 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 6px 20px rgba(212, 175, 55, 0.45));
+      opacity: 0; transform: translateY(18px);
+      animation: splashTextIn 0.9s ease 0.55s forwards;
+    }
+    .splash-eng {
+      font-size: 16px; font-weight: 800; letter-spacing: 6px; color: var(--text);
+      margin-top: 2px; opacity: 0; transform: translateY(12px);
+      animation: splashTextIn 0.8s ease 0.85s forwards;
+    }
+    .splash-dev {
+      margin-top: 18px; display: flex; align-items: center; gap: 8px;
+      padding: 6px 18px; border-radius: 999px;
+      background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.4);
+      font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
+      color: var(--gold-bright); opacity: 0; transform: translateY(10px);
+      animation: splashTextIn 0.8s ease 1.15s forwards;
+    }
+    @keyframes splashLogoIn {
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes splashTextIn {
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    #canvas-container {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-    }
-
-    /* --- ETHIOPIAN ROYAL FAMILY MAIN MENU --- */
+    /* --- 2. ETHIOPIAN ROYAL FAMILY MAIN MENU OVERLAY --- */
     #main-menu {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at center, rgba(16, 13, 11, 0.45) 0%, rgba(10, 8, 7, 0.90) 100%);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at center, rgba(36, 26, 20, 0.48) 0%, rgba(18, 13, 10, 0.88) 100%);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       transition: opacity 0.4s ease, visibility 0.4s ease;
-      padding: 16px;
+      padding: 12px;
     }
-    #main-menu.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
+    #main-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     .menu-card {
       position: relative;
-      width: min(720px, 95vw);
-      max-height: 92vh;
-      background: linear-gradient(155deg, rgba(32, 27, 24, 0.95) 0%, rgba(14, 12, 10, 0.98) 100%);
-      border: 1.5px solid rgba(245, 197, 66, 0.55);
-      border-radius: 26px;
-      padding: 24px 30px;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.88), inset 0 0 36px rgba(245, 197, 66, 0.10);
+      width: min(700px, 95vw);
+      max-height: 94vh;
+      background: linear-gradient(160deg, rgba(40, 30, 24, 0.96) 0%, rgba(22, 16, 13, 0.98) 100%);
+      border: 1.5px solid var(--gold);
+      border-radius: 24px;
+      padding: 18px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 28px rgba(212, 175, 55, 0.12);
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 24px;
+      grid-template-columns: 1fr 1.08fr;
+      gap: 20px;
       align-items: center;
       overflow: hidden;
     }
-
-    /* Ethiopian Royal Tibeb Top Ribbon */
     .menu-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 5px;
-      background: repeating-linear-gradient(
-        90deg,
-        #1B8A3D 0px, #1B8A3D 28px,
-        #F5C542 28px, #F5C542 56px,
-        #C62828 56px, #C62828 84px,
-        #D4AF37 84px, #D4AF37 112px
-      );
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+      background: repeating-linear-gradient(90deg, #1B8A3D 0px, #1B8A3D 24px, #FCD116 24px, #FCD116 48px, #D62828 48px, #D62828 72px, #D4AF37 72px, #D4AF37 96px);
+      opacity: 0.95;
     }
 
     .menu-hero {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      border-right: 1px solid rgba(245, 197, 66, 0.22);
-      padding-right: 20px;
+      display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+      border-right: 1px solid rgba(212, 175, 55, 0.22);
+      padding-right: 18px;
+    }
+    .royal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+      color: var(--gold-bright); background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 999px;
+      padding: 4px 11px; margin-bottom: 6px;
+    }
+    .geez-title {
+      font-size: clamp(34px, 5.5vw, 50px); font-weight: 900; line-height: 1;
+      margin: 0;
+      background: linear-gradient(180deg, #FFF6D6 0%, #FFD54F 45%, #B8860B 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
+    }
+    .eng-title {
+      font-size: clamp(14px, 2.2vw, 19px); font-weight: 800; letter-spacing: 4px;
+      color: var(--text); margin: 3px 0 6px 0;
+    }
+    .menu-sub {
+      font-size: 11.5px; color: var(--muted); line-height: 1.4; margin: 0 0 12px 0;
     }
 
-    .royal-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1.8px;
-      text-transform: uppercase;
-      color: var(--md-primary);
-      background: rgba(245, 197, 66, 0.14);
-      border: 1px solid rgba(245, 197, 66, 0.38);
-      padding: 4px 12px;
-      border-radius: 999px;
-      margin-bottom: 8px;
+    /* Yona Graphics Developer Signature Card */
+    .yona-brand {
+      display: flex; align-items: center; gap: 11px;
+      background: rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 14px; padding: 7px 12px; width: 100%;
     }
-
-    .nigus-geez {
-      font-size: clamp(42px, 6.5vw, 58px);
-      font-weight: 900;
-      line-height: 1.02;
-      background: linear-gradient(180deg, #FFF8E1 0%, #F5C542 50%, #B38314 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 4px 16px rgba(245, 197, 66, 0.35));
+    .yona-logo-box {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: #050507; border: 1px solid rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
     }
+    .yona-text { display: flex; flex-direction: column; }
+    .yona-dev-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+    .yona-dev-name { font-size: 12.5px; font-weight: 800; color: var(--gold-bright); letter-spacing: 0.4px; }
 
-    .nigus-eng {
-      font-size: clamp(16px, 2.4vw, 22px);
-      font-weight: 800;
-      letter-spacing: 4.5px;
-      color: var(--md-on-surface);
-      margin: 2px 0 8px 0;
+    /* Menu Controls Right Column */
+    .menu-actions { display: flex; flex-direction: column; gap: 8px; }
+    .side-picker-label {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.4px;
+      color: var(--gold-bright); margin-bottom: -2px;
     }
-
-    .nigus-desc {
-      font-size: 12px;
-      color: var(--md-on-surface-variant);
-      line-height: 1.45;
-      margin-bottom: 14px;
+    .side-picker {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     }
-
-    /* Yona Graphics Official Developer Card */
-    .yona-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(0, 0, 0, 0.52);
-      border: 1px solid rgba(245, 197, 66, 0.34);
-      border-radius: 16px;
-      padding: 8px 14px;
-      width: 100%;
+    .side-option {
+      appearance: none; border: 1.5px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04); color: var(--muted);
+      padding: 8px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.2s ease;
     }
-
-    .yona-logo {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: #000000;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 0 14px rgba(245, 197, 66, 0.22);
+    .side-option.selected {
+      background: rgba(212, 175, 55, 0.22);
+      border-color: var(--gold-bright);
+      color: var(--text);
+      box-shadow: 0 0 14px rgba(212, 175, 55, 0.25);
     }
-
-    .yona-info {
-      display: flex;
-      flex-direction: column;
+    .swatch-mini {
+      width: 10px; height: 10px; border-radius: 50%; display: inline-block;
     }
+    .swatch-mini.ivory { background: #FFF5E1; box-shadow: 0 0 6px #FFD54F; }
+    .swatch-mini.obsidian { background: #1A161F; border: 1.5px solid #FF5722; box-shadow: 0 0 6px #FF5722; }
 
-    .yona-sub {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1.3px;
-      text-transform: uppercase;
-      color: var(--md-on-surface-variant);
+    .menu-btn {
+      appearance: none; width: 100%;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text); padding: 9px 14px; border-radius: 13px;
+      font-size: 12.5px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: all 0.2s ease;
     }
-
-    .yona-title {
+    .menu-btn.primary {
+      background: linear-gradient(135deg, #D4AF37 0%, #9A7B1C 100%);
+      color: #120D0A; border-color: #FFE082;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
       font-size: 13.5px;
-      font-weight: 800;
-      letter-spacing: 0.6px;
-      color: var(--md-primary);
     }
+    .menu-btn:active { transform: scale(0.98); }
+    .menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-    .menu-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .m-btn {
-      appearance: none;
-      width: 100%;
-      border: 1px solid rgba(245, 197, 66, 0.32);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--md-on-surface);
-      padding: 11px 16px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: all 0.2s ease;
-    }
-
-    .m-btn.gold {
-      background: linear-gradient(135deg, #F5C542 0%, #B8860B 100%);
-      color: #0D0B0A;
-      border-color: #FFF3C4;
-      font-size: 14px;
-      box-shadow: 0 6px 22px rgba(245, 197, 66, 0.35);
-    }
-
-    .m-btn:active {
-      transform: scale(0.98);
-    }
-
-    .m-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    /* --- SINGLE-LEVEL MATERIAL DESIGN 3 HUD --- */
-    .hud-layer {
+    /* --- 3. PIECE LORE INSPECTOR CARD (Shows info when tapping any piece) --- */
+    #piece-info-card {
       position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 10px 16px;
+      left: max(14px, env(safe-area-inset-left));
+      top: 50%;
+      transform: translateY(-50%) translateX(-16px);
+      z-index: 15;
+      width: min(255px, 44vw);
+      background: var(--surface);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.7);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: all 0.25s ease;
     }
-
-    .top-bar, .bottom-bar {
+    #piece-info-card.visible {
+      opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
       pointer-events: auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--md-surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--md-outline);
-      border-radius: 999px;
-      padding: 6px 14px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
-      margin: 0 auto;
-      max-width: 96vw;
+    }
+    .lore-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .lore-dynasty {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--gold-bright);
+    }
+    .lore-close {
+      background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 0 2px;
+    }
+    .lore-geez {
+      font-size: 19px; font-weight: 900; color: var(--gold-bright); line-height: 1.1;
+    }
+    .lore-title {
+      font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px;
+    }
+    .lore-desc {
+      font-size: 11px; color: var(--muted); line-height: 1.38; margin: 0;
     }
 
-    .brand-cluster {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding-right: 10px;
-      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    /* --- 4. SINGLE-LEVEL COMPACT LANDSCAPE HUD --- */
+    .hud-bar {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; align-items: center; gap: 8px;
+      background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 999px;
+      padding: 5px 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.65);
+      max-width: 96vw; white-space: nowrap;
     }
+    .top-hud { top: max(8px, env(safe-area-inset-top)); justify-content: space-between; width: min(640px, 95vw); }
+    .bottom-hud { bottom: max(8px, env(safe-area-inset-bottom)); gap: 6px; }
 
-    .brand-title {
-      font-size: 0.92rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      color: var(--md-primary);
-      white-space: nowrap;
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .crown-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-bright);
     }
-
-    .turn-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 0.82rem;
-      font-weight: 700;
-      white-space: nowrap;
+    .brand-title { font-weight: 800; font-size: 13px; letter-spacing: 0.6px; color: var(--gold-bright); }
+    .turn-pill {
+      font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
+      background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--text);
     }
-
-    .turn-swatch {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: #FFF8E7;
-      box-shadow: 0 0 8px #F5C542;
-      transition: all 0.3s ease;
+    .btn {
+      appearance: none; border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07); color: var(--text);
+      padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
     }
-
-    .turn-swatch.black {
-      background: #1A1615;
-      border: 1.5px solid var(--md-ember);
-      box-shadow: 0 0 10px var(--md-ember);
+    .btn.active {
+      background: rgba(212, 175, 55, 0.25); border-color: var(--gold); color: var(--gold-bright);
     }
-
-    .captured-tray {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.82rem;
-      padding-left: 6px;
-      color: var(--md-on-surface-variant);
+    #toast {
+      position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+      z-index: 20; background: rgba(26, 19, 15, 0.95); color: var(--gold-bright);
+      border: 1px solid var(--gold); border-radius: 999px; padding: 5px 16px;
+      font-size: 12px; font-weight: 700; pointer-events: none; opacity: 0;
+      transition: opacity 0.25s ease;
     }
+    #toast.show { opacity: 1; }
 
-    .cap-group {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .cap-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .cap-dot.marble { background: #F5C542; }
-    .cap-dot.obsidian { background: #FF5722; }
-
-    .md-chip {
-      appearance: none;
-      border: 1px solid transparent;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--md-on-surface);
-      font-family: inherit;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 999px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .md-chip:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .md-chip.active {
-      background: var(--md-primary-container);
-      color: var(--md-primary);
-      border-color: rgba(245, 197, 66, 0.45);
-    }
-
-    .divider {
-      width: 1px;
-      height: 20px;
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    #status-banner {
-      position: fixed;
-      top: 64px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-10px);
-      background: var(--md-surface-high);
-      border: 1px solid var(--md-primary);
-      color: var(--md-primary);
-      padding: 7px 18px;
-      border-radius: 999px;
-      font-size: 0.84rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      z-index: 20;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-      white-space: nowrap;
-    }
-
-    #status-banner.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    @media (max-width: 650px) and (orientation: portrait) {
-      .menu-card { grid-template-columns: 1fr; padding: 18px; gap: 14px; }
-      .menu-hero { border-right: none; border-bottom: 1px solid rgba(245, 197, 66, 0.22); padding-right: 0; padding-bottom: 12px; }
-      .captured-tray { display: none; }
+    @media (max-width: 600px) and (orientation: portrait) {
+      .menu-card { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
+      .menu-hero { border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.22); padding-right: 0; padding-bottom: 10px; }
+      #piece-info-card { top: auto; bottom: 64px; left: 50%; transform: translateX(-50%); width: 90vw; }
+      #piece-info-card.visible { transform: translateX(-50%); }
     }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
 
-  <!-- ETHIOPIAN ROYAL FAMILY MAIN MENU -->
+  <!-- 1. CINEMATIC OPENING ANIMATION (Game Name + Yona Graphics) -->
+  <div id="intro-splash" onclick="dismissSplash()">
+    <div class="splash-tibeb"></div>
+    <div class="splash-logo-wrap">
+      <svg viewBox="0 0 100 100" width="54" height="54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
+        <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
+        <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#080605"/>
+        <path d="M 37 56 L 37 64 L 34 69 L 46 93 L 58 69 L 53 63" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <line x1="46" y1="67" x2="46" y2="91" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="splash-geez">ንጉስ</h1>
+    <div class="splash-eng">NIGUS ROYAL CHESS</div>
+    <div class="splash-dev">✨ Developed by Yona Graphics</div>
+  </div>
+
+  <!-- 2. ETHIOPIAN ROYAL FAMILY MAIN MENU -->
   <div id="main-menu">
     <div class="menu-card">
       <div class="menu-hero">
-        <div class="royal-tag">👑 Ethiopian Royal Family Edition</div>
-        <div class="nigus-geez">ንጉስ</div>
-        <div class="nigus-eng">NIGUS CHESS</div>
-        <p class="nigus-desc">
-          Playable 3D Ethiopian Wizard's Chess. Command the Aksumite Ivory &amp; Gold Dynasty against the Volcanic Obsidian Empire.
-        </p>
+        <div class="royal-badge">👑 Imperial Aksumite Edition</div>
+        <h1 class="geez-title">ንጉስ</h1>
+        <div class="eng-title">NIGUS CHESS</div>
+        <p class="menu-sub">3D Ethiopian Royal Wizard's Chess. Command the Ivory Marble &amp; Gold Dynasty or the Volcanic Obsidian Empire.</p>
 
-        <!-- Yona Graphics Brand Signature with Uploaded Logo -->
-        <div class="yona-card">
-          <div class="yona-logo">
-            <svg viewBox="0 0 100 100" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="yona-brand">
+          <div class="yona-logo-box">
+            <svg viewBox="0 0 100 100" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
               <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
-              <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#000000"/>
+              <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#050507"/>
               <path d="M 37 56 L 37 64 L 34 69 L 46 93 L 58 69 L 53 63" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
               <line x1="46" y1="67" x2="46" y2="91" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="yona-info">
-            <span class="yona-sub">Developed By</span>
-            <span class="yona-title">YONA GRAPHICS</span>
+          <div class="yona-text">
+            <span class="yona-dev-label">Designed &amp; Developed By</span>
+            <span class="yona-dev-name">YONA GRAPHICS</span>
           </div>
         </div>
       </div>
 
-      <div class="menu-controls">
-        <button class="m-btn gold" id="menu-start-ai">
+      <div class="menu-actions">
+        <div class="side-picker-label">Choose Your Royal Dynasty:</div>
+        <div class="side-picker">
+          <button class="side-option selected" id="pick-white" onclick="selectPlayerColor('w')">
+            <span class="swatch-mini ivory"></span>
+            <span>Ivory Marble</span>
+          </button>
+          <button class="side-option" id="pick-black" onclick="selectPlayerColor('b')">
+            <span class="swatch-mini obsidian"></span>
+            <span>Obsidian Ember</span>
+          </button>
+        </div>
+
+        <button class="menu-btn primary" onclick="startMatch(true)">
           <span>⚔️ New Game (vs Royal AI)</span>
           <span>▶</span>
         </button>
-        <button class="m-btn" id="menu-start-2p">
-          <span>👥 2-Player Royal Duel</span>
+        <button class="menu-btn" onclick="startMatch(false)">
+          <span>👥 2-Player Pass &amp; Play</span>
           <span>▶</span>
         </button>
-        <div class="m-grid">
-          <button class="m-btn" id="menu-ai-rank">
+        <div class="menu-row">
+          <button class="menu-btn" id="menu-diff" onclick="cycleDifficulty()">
             <span>🧠 AI:</span>
-            <span id="menu-rank-label" style="color:var(--md-primary)">Ras (Med)</span>
+            <span id="diff-label" style="color:var(--gold-bright)">Ras (Med)</span>
           </button>
-          <button class="m-btn" id="menu-sound-btn">
+          <button class="menu-btn" id="menu-sfx" onclick="toggleSound()">
             <span>🔊 Sound:</span>
-            <span id="menu-sound-label" style="color:var(--md-primary)">ON</span>
+            <span id="sfx-label" style="color:var(--gold-bright)">ON</span>
           </button>
         </div>
-        <button class="m-btn" id="menu-resume-btn" style="display:none; border-color:rgba(255,255,255,0.28);">
-          <span>🛡️ Resume Active Battle</span>
+        <button class="menu-btn" id="btn-resume" onclick="closeMenu()" style="display:none; border-color:rgba(255,255,255,0.28);">
+          <span>🛡️ Resume Current Battle</span>
           <span>↵</span>
         </button>
       </div>
     </div>
   </div>
 
-  <div id="status-banner">NIGUS ROYAL COURT</div>
-
-  <!-- SINGLE-LEVEL MATERIAL DESIGN 3 HUD -->
-  <div class="hud-layer">
-    <header class="top-bar">
-      <div class="brand-cluster">
-        <button class="md-chip" id="btn-open-menu" style="padding:4px 10px;">☰ Menu</button>
-        <span class="brand-title">ንጉስ • NIGUS</span>
-      </div>
-      <div class="turn-indicator">
-        <span class="turn-swatch" id="turn-swatch"></span>
-        <span id="turn-text">Marble Dynasty (White)</span>
-      </div>
-      <div class="captured-tray">
-        <div class="cap-group" title="Shattered Obsidian">
-          <span class="cap-dot obsidian"></span>
-          <span id="cap-black">0</span>
-        </div>
-        <div class="cap-group" title="Shattered Marble">
-          <span class="cap-dot marble"></span>
-          <span id="cap-white">0</span>
-        </div>
-      </div>
-    </header>
-
-    <nav class="bottom-bar" aria-label="Game Controls">
-      <button class="md-chip" id="btn-new">🔄 New</button>
-      <button class="md-chip" id="btn-undo">↩️ Undo</button>
-      <div class="divider"></div>
-      <button class="md-chip active" id="btn-mode">🤖 vs AI</button>
-      <div class="divider"></div>
-      <button class="md-chip" id="btn-cam">🎥 Cam: Orbit</button>
-      <button class="md-chip active" id="btn-action-cam">⚡ Action Cam</button>
-      <button class="md-chip active" id="btn-sfx">🔊</button>
-    </nav>
+  <!-- 3. ETHIOPIAN ROYAL PIECE LORE INSPECTOR CARD -->
+  <div id="piece-info-card">
+    <div class="lore-header">
+      <span class="lore-dynasty" id="lore-dynasty">IVORY MARBLE DYNASTY • E1</span>
+      <button class="lore-close" onclick="hidePieceInfo()">✕</button>
+    </div>
+    <div class="lore-geez" id="lore-geez">ንጉሠ ነገሥት</div>
+    <div class="lore-title" id="lore-title">Niguse Negest (King)</div>
+    <p class="lore-desc" id="lore-desc">Emperor of Ethiopia bearing the tiered Imperial Crown and Lalibela Cross.</p>
   </div>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+  <!-- 4. SINGLE-LEVEL TOP HUD -->
+  <div class="hud-bar top-hud">
+    <div class="brand">
+      <button class="btn" onclick="openMenu()" style="padding:4px 10px;">☰ Menu</button>
+      <div class="crown-dot" id="turn-dot"></div>
+      <span class="brand-title">ንጉስ • NIGUS</span>
+    </div>
+    <div class="turn-pill" id="status-text">Marble's Turn (ንጉስ)</div>
+  </div>
 
-    // Try locking landscape orientation on supported mobile devices
+  <div id="toast">⚔️ Royal Capture!</div>
+
+  <!-- 5. SINGLE-LEVEL BOTTOM HUD -->
+  <div class="hud-bar bottom-hud">
+    <button class="btn active" id="btn-mode" onclick="toggleMode()">🤖 vs AI</button>
+    <button class="btn" id="btn-cam" onclick="cycleCamera()">🎥 View: Marble</button>
+    <button class="btn active" id="btn-fx" onclick="toggleActionCam()">⚡ Action Cam</button>
+    <button class="btn" onclick="undoMove()">↩️ Undo</button>
+    <button class="btn" onclick="resetGame()">🔄 Restart</button>
+  </div>
+
+  <script>
+    // Lock landscape if supported
     try {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(() => {});
       }
     } catch (e) {}
 
-    // ============================================================================
-    // 1. WEB AUDIO SYNTHESIZER (Chimes, Stone Slides & Shatter Explosions)
-    // ============================================================================
-    class SoundFX {
-      constructor() {
-        this.enabled = true;
-        this.ctx = null;
-      }
-      init() {
-        if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) this.ctx = new AudioCtx();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-      }
-      playSelect() {
-        if (!this.enabled) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(528, now);
-        osc.frequency.exponentialRampToValueAtTime(880, now + 0.14);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-        osc.connect(gain).connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.15);
-      }
-      playMove() {
-        if (!this.enabled) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(145, now);
-        osc.frequency.exponentialRampToValueAtTime(62, now + 0.22);
-        gain.gain.setValueAtTime(0.24, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-        osc.connect(gain).connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.24);
-      }
-      playShatter() {
-        if (!this.enabled) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-
-        const bufferSize = this.ctx.sampleRate * 0.45;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.12));
-        }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(950, now);
-
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.48, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.44);
-
-        noise.connect(filter).connect(gain).connect(this.ctx.destination);
-        noise.start(now);
-
-        const sub = this.ctx.createOscillator();
-        const subGain = this.ctx.createGain();
-        sub.type = 'sawtooth';
-        sub.frequency.setValueAtTime(120, now);
-        sub.frequency.exponentialRampToValueAtTime(28, now + 0.38);
-        subGain.gain.setValueAtTime(0.35, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-        sub.connect(subGain).connect(this.ctx.destination);
-        sub.start(now);
-        sub.stop(now + 0.4);
-      }
+    // Auto-transition from Opening Splash Animation into Menu after 2.7s
+    function dismissSplash() {
+      const sp = document.getElementById('intro-splash');
+      if (sp) sp.classList.add('fade-out');
     }
-    const sfx = new SoundFX();
+    setTimeout(dismissSplash, 2700);
 
-    // ============================================================================
-    // 2. THREE.JS SCENE, RENDERER & STUDIO ROOM-ENVIRONMENT LIGHTING
-    // ============================================================================
+    // --- ETHIOPIAN ROYAL PIECE LORE DATA ---
+    const ROYAL_LORE = {
+      k: {
+        geez: 'ንጉሠ ነገሥት',
+        title: 'Niguse Negest • King',
+        desc: 'Emperor of Ethiopia wearing the octagonal golden imperial crown topped with the sacred Lalibela cross. Protect him at all costs.'
+      },
+      q: {
+        geez: 'እቴጌ',
+        title: 'Itege • Queen',
+        desc: 'Empress Consort crowned with the radiant solar halo tiara. The most commanding and versatile force on the royal battlefield.'
+      },
+      b: {
+        geez: 'አቡነ',
+        title: 'Abuna • Bishop',
+        desc: 'High Patriarch bearing the floating processional Lalibela cross. Commands diagonal corridors with ancient blessing.'
+      },
+      n: {
+        geez: 'ፈረሰኛ',
+        title: 'Feresegna • Knight',
+        desc: 'Elite Ethiopian royal cavalry warhorse adorned with a golden crest mane. Leaps over fortifications in an L-formation.'
+      },
+      r: {
+        geez: 'ሐውልት',
+        title: 'Hawilt Stele • Rook',
+        desc: 'Monumental carved Aksumite obelisk featuring a false-door sanctuary base and rounded crown apex. Fortifies ranks and files.'
+      },
+      p: {
+        geez: 'ጋሻ ጃግሬ',
+        title: 'Gasha Jagre • Pawn',
+        desc: 'Loyal Imperial Vanguard carrying the traditional conical Ethiopian Gasha shield. Advances fearlessly to earn royal promotion.'
+      }
+    };
+
+    function showPieceInfo(piece, sq) {
+      const info = ROYAL_LORE[piece.type];
+      if (!info) return;
+      const dynastyName = piece.color === 'w' ? 'IVORY MARBLE DYNASTY' : 'OBSIDIAN EMBER EMPIRE';
+      const dynastyEl = document.getElementById('lore-dynasty');
+      dynastyEl.textContent = dynastyName + ' • ' + sq.toUpperCase();
+      dynastyEl.style.color = piece.color === 'w' ? '#FFE082' : '#FF7043';
+      document.getElementById('lore-geez').textContent = info.geez;
+      document.getElementById('lore-title').textContent = info.title;
+      document.getElementById('lore-desc').textContent = info.desc;
+      document.getElementById('piece-info-card').classList.add('visible');
+    }
+
+    window.hidePieceInfo = function() {
+      document.getElementById('piece-info-card').classList.remove('visible');
+    };
+
+    // --- SOUND SYNTHESIS ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (type === 'select') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(540, now);
+          osc.frequency.exponentialRampToValueAtTime(820, now + 0.08);
+          gain.gain.setValueAtTime(0.11, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now); osc.stop(now + 0.09);
+        } else if (type === 'move') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.exponentialRampToValueAtTime(92, now + 0.16);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+          osc.start(now); osc.stop(now + 0.17);
+        } else if (type === 'shatter') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(34, now + 0.45);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
+          osc.start(now); osc.stop(now + 0.46);
+        }
+      } catch (e) {}
+    }
+
+    // --- THREE.JS SCENE WITH WARM WEB-VERSION ROYAL AMBER ATMOSPHERE ---
     const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1D1612); // Warm Ethiopian Royal Umber/Bronze (not black!)
+    scene.fog = new THREE.FogExp2(0x1D1612, 0.020);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.25, 100);
+    camera.position.set(0, 8.2, 9.4);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.22;
     container.appendChild(renderer.domElement);
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0D0B0A);
-    scene.fog = new THREE.FogExp2(0x0D0B0A, 0.022);
-
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.2, 100);
-    const CAM_VIEWS = {
-      orbit: { pos: new THREE.Vector3(0, 10.5, 11.2), look: new THREE.Vector3(0, 0, 0), label: '🎥 Cam: Orbit' },
-      top:   { pos: new THREE.Vector3(0, 16.5, 0.01), look: new THREE.Vector3(0, 0, 0), label: '🎥 Cam: Top' },
-      side:  { pos: new THREE.Vector3(12.2, 6.2, 0),  look: new THREE.Vector3(0, 0.4, 0), label: '🎥 Cam: Royal' }
-    };
-    let currentCamKey = 'orbit';
-    camera.position.copy(CAM_VIEWS.orbit.pos);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const ControlsClass = THREE.OrbitControls || window.OrbitControls;
+    const controls = new ControlsClass(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.maxPolarAngle = Math.PI / 2.12;
-    controls.minDistance = 5.5;
-    controls.maxDistance = 22;
-    controls.target.copy(CAM_VIEWS.orbit.look);
+    controls.maxPolarAngle = Math.PI / 2.18;
+    controls.minDistance = 6.2;
+    controls.maxDistance = 16.5;
+    controls.target.set(0, 0.3, 0);
 
-    const keyLight = new THREE.DirectionalLight(0xFFF3D6, 2.2);
-    keyLight.position.set(7, 14, 8);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(2048, 2048);
-    keyLight.shadow.camera.near = 2;
-    keyLight.shadow.camera.far = 30;
-    const d = 6.5;
-    keyLight.shadow.camera.left = -d;
-    keyLight.shadow.camera.right = d;
-    keyLight.shadow.camera.top = d;
-    keyLight.shadow.camera.bottom = -d;
-    keyLight.shadow.bias = -0.0005;
-    scene.add(keyLight);
+    // --- LIGHTING (Warm Royal Palace Glow) ---
+    scene.add(new THREE.HemisphereLight(0xFFF5DE, 0x38281E, 0.88));
 
-    const rimLight = new THREE.DirectionalLight(0xFF6D3A, 1.1);
-    rimLight.position.set(-9, 7, -8);
-    scene.add(rimLight);
+    const sunLight = new THREE.DirectionalLight(0xFFF0C8, 1.6);
+    sunLight.position.set(7, 15, 9);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
 
-    const strikeLight = new THREE.PointLight(0xFF6D00, 0, 8);
-    scene.add(strikeLight);
+    const goldRim = new THREE.PointLight(0xFFD54F, 1.25, 24);
+    goldRim.position.set(6, 5, 6);
+    scene.add(goldRim);
 
-    // ============================================================================
-    // 3. PBR MATERIALS: AKSUMITE MARBLE & GOLD VS VOLCANIC OBSIDIAN & EMBER
-    // ============================================================================
-    const MATS = {
-      marble: new THREE.MeshPhysicalMaterial({
-        color: 0xFAF3E6,
-        roughness: 0.18,
-        metalness: 0.04,
-        clearcoat: 0.45,
-        clearcoatRoughness: 0.15
-      }),
-      marbleGold: new THREE.MeshStandardMaterial({
-        color: 0xF5C542,
-        roughness: 0.22,
-        metalness: 0.88,
-        emissive: 0x4A3500,
-        emissiveIntensity: 0.25
-      }),
-      obsidian: new THREE.MeshPhysicalMaterial({
-        color: 0x161418,
-        roughness: 0.12,
-        metalness: 0.25,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.08
-      }),
-      obsidianEmber: new THREE.MeshStandardMaterial({
-        color: 0xFF6D3A,
-        roughness: 0.3,
-        metalness: 0.5,
-        emissive: 0xFF3D00,
-        emissiveIntensity: 0.75
-      }),
-      boardLight: new THREE.MeshStandardMaterial({
-        color: 0xE8DEC8,
-        roughness: 0.28,
-        metalness: 0.08
-      }),
-      boardDark: new THREE.MeshStandardMaterial({
-        color: 0x1E1B1A,
-        roughness: 0.22,
-        metalness: 0.18
-      }),
-      boardFrame: new THREE.MeshStandardMaterial({
-        color: 0x2A211B,
-        roughness: 0.45,
-        metalness: 0.3
-      }),
-      frameGold: new THREE.MeshStandardMaterial({
-        color: 0xD4A238,
-        roughness: 0.28,
-        metalness: 0.85
-      })
-    };
+    const emberRim = new THREE.PointLight(0xFF6D3A, 1.35, 24);
+    emberRim.position.set(-6, 5, -6);
+    scene.add(emberRim);
 
-    // ============================================================================
-    // 4. ARCHITECTURAL AKSUMITE 64-SQUARE BOARD
-    // ============================================================================
+    // --- LUXURY PBR MATERIALS ---
+    const matMarble = new THREE.MeshStandardMaterial({
+      color: 0xF7F2E7, roughness: 0.18, metalness: 0.06
+    });
+    const matGold = new THREE.MeshStandardMaterial({
+      color: 0xE5B83B, roughness: 0.22, metalness: 0.88,
+      emissive: 0x4A3200, emissiveIntensity: 0.28
+    });
+    const matObsidian = new THREE.MeshStandardMaterial({
+      color: 0x1A1622, roughness: 0.14, metalness: 0.55
+    });
+    const matEmber = new THREE.MeshStandardMaterial({
+      color: 0xFF5722, roughness: 0.25, metalness: 0.35,
+      emissive: 0xFF3D00, emissiveIntensity: 0.85
+    });
+
+    const matSqLight = new THREE.MeshStandardMaterial({ color: 0xEDE4D0, roughness: 0.28, metalness: 0.08 });
+    const matSqDark = new THREE.MeshStandardMaterial({ color: 0x261E1A, roughness: 0.22, metalness: 0.25 });
+    const matPlinth = new THREE.MeshStandardMaterial({ color: 0x2D211A, roughness: 0.35, metalness: 0.45 });
+
+    // --- AKSUMITE ARCHITECTURAL CHESS BOARD ---
     const boardGroup = new THREE.Group();
     scene.add(boardGroup);
 
-    const squareMeshes = [];
-    const squareMap = new Map();
+    const squareMeshes = {};
+    const highlightMeshes = {};
+
+    const plinth1 = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.32, 9.4), matPlinth);
+    plinth1.position.y = -0.30; plinth1.receiveShadow = true; boardGroup.add(plinth1);
+
+    const plinthGold = new THREE.Mesh(new THREE.BoxGeometry(8.52, 0.24, 8.52), matGold);
+    plinthGold.position.y = -0.14; boardGroup.add(plinthGold);
+
+    const files = ['a','b','c','d','e','f','g','h'];
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const sqName = files[f] + (8 - r);
+        const isLight = (r + f) % 2 === 0;
+        const sq = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.14, 0.98), isLight ? matSqLight : matSqDark);
+        sq.position.set(f - 3.5, 0, r - 3.5);
+        sq.receiveShadow = true;
+        sq.userData = { square: sqName };
+        boardGroup.add(sq);
+        squareMeshes[sqName] = sq;
+
+        const hlGeo = new THREE.RingGeometry(0.28, 0.41, 28);
+        hlGeo.rotateX(-Math.PI / 2);
+        const hlMat = new THREE.MeshBasicMaterial({
+          color: 0xFFD54F, side: THREE.DoubleSide, transparent: true, opacity: 0.9,
+          polygonOffset: true, polygonOffsetFactor: -2
+        });
+        const hl = new THREE.Mesh(hlGeo, hlMat);
+        hl.position.set(f - 3.5, 0.082, r - 3.5);
+        hl.visible = false;
+        boardGroup.add(hl);
+        highlightMeshes[sqName] = hl;
+      }
+    }
+
+    // --- GLITCH-FREE SCULPTED ETHIOPIAN ROYAL PIECES ---
+    function createEthiopianPiece(type, color) {
+      const group = new THREE.Group();
+      const primaryMat = color === 'w' ? matMarble : matObsidian;
+      const accentMat = color === 'w' ? matGold : matEmber;
+      const dir = color === 'w' ? -1 : 1;
+
+      const baseBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.10, 24), primaryMat);
+      baseBottom.position.y = 0.05; baseBottom.castShadow = true; group.add(baseBottom);
+
+      const baseGoldRing = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.37, 0.05, 24), accentMat);
+      baseGoldRing.position.y = 0.125; group.add(baseGoldRing);
+
+      const baseTop = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.34, 0.08, 24), primaryMat);
+      baseTop.position.y = 0.19; group.add(baseTop);
+
+      const floatGroup = new THREE.Group();
+      const spinGroup = new THREE.Group();
+      floatGroup.add(spinGroup);
+      group.add(floatGroup);
+
+      if (type === 'p') {
+        const tunic = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.26, 0.46, 20), primaryMat);
+        tunic.position.y = 0.45; tunic.castShadow = true; group.add(tunic);
+
+        const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 10, 20), accentMat);
+        collar.rotation.x = Math.PI / 2; collar.position.y = 0.67; group.add(collar);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 20, 20), primaryMat);
+        head.position.y = 0.82; group.add(head);
+
+        const headband = new THREE.Mesh(new THREE.TorusGeometry(0.146, 0.018, 8, 20), accentMat);
+        headband.rotation.x = Math.PI / 2; headband.position.y = 0.85; group.add(headband);
+
+        const shield = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.09, 20), accentMat);
+        shield.rotation.x = dir * (Math.PI / 2);
+        shield.position.set(0, 0.52, dir * 0.23);
+        floatGroup.add(shield);
+
+      } else if (type === 'r') {
+        const steleBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.38), primaryMat);
+        steleBase.position.y = 0.29; group.add(steleBase);
+
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.78, 0.28), primaryMat);
+        pillar.position.y = 0.75; pillar.castShadow = true; group.add(pillar);
+
+        for (let i = 0; i < 3; i++) {
+          const band = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.04, 0.30), accentMat);
+          band.position.y = 0.62 + i * 0.18;
+          group.add(band);
+        }
+
+        const falseDoor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.31), accentMat);
+        falseDoor.position.y = 0.42; group.add(falseDoor);
+
+        const apex = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.24, 24), accentMat);
+        apex.rotation.x = Math.PI / 2;
+        apex.position.y = 1.16;
+        group.add(apex);
+
+      } else if (type === 'n') {
+        const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.28, 0.34, 20), primaryMat);
+        pedestal.position.y = 0.39; group.add(pedestal);
+
+        const chest = new THREE.Mesh(new THREE.SphereGeometry(0.21, 18, 18), primaryMat);
+        chest.position.set(0, 0.62, dir * 0.04); group.add(chest);
+
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 0.44, 16), primaryMat);
+        neck.position.set(0, 0.86, dir * 0.06);
+        neck.rotation.x = dir * 0.28;
+        neck.castShadow = true; group.add(neck);
+
+        const head = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 16), primaryMat);
+        head.rotation.x = dir * (Math.PI / 2.3);
+        head.position.set(0, 1.02, dir * 0.20);
+        group.add(head);
+
+        const mane = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.12), accentMat);
+        mane.position.set(0, 0.88, -dir * 0.08);
+        mane.rotation.x = dir * 0.25;
+        floatGroup.add(mane);
+
+      } else if (type === 'b') {
+        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.29, 0.78, 24), primaryMat);
+        robe.position.y = 0.61; robe.castShadow = true; group.add(robe);
+
+        const sash = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.025, 10, 24), accentMat);
+        sash.rotation.x = Math.PI / 2; sash.position.y = 0.72; group.add(sash);
+
+        const mitre = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 20), primaryMat);
+        mitre.position.y = 1.14; group.add(mitre);
+
+        const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.30, 0.06), accentMat);
+        const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.06), accentMat);
+        vBar.position.y = 1.44; hBar.position.y = 1.47;
+        spinGroup.add(vBar); spinGroup.add(hBar);
+
+      } else if (type === 'q') {
+        const gown = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.31, 0.92, 24), primaryMat);
+        gown.position.y = 0.68; gown.castShadow = true; group.add(gown);
+
+        const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.12, 20), accentMat);
+        collar.position.y = 1.16; group.add(collar);
+
+        const tiara = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.18, 12), accentMat);
+        tiara.position.y = 1.30; group.add(tiara);
+
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 12, 28), accentMat);
+        halo.position.y = 1.58;
+        spinGroup.add(halo);
+
+      } else if (type === 'k') {
+        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.33, 1.02, 24), primaryMat);
+        robe.position.y = 0.73; robe.castShadow = true; group.add(robe);
+
+        const capeRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 12, 24), accentMat);
+        capeRing.rotation.x = Math.PI / 2; capeRing.position.y = 1.18; group.add(capeRing);
+
+        const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.21, 0.24, 8), accentMat);
+        crownBase.position.y = 1.34; group.add(crownBase);
+
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 20), primaryMat);
+        dome.position.y = 1.48; group.add(dome);
+
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.34, 0.075), accentMat);
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.075, 0.075), accentMat);
+        crossV.position.y = 1.80; crossH.position.y = 1.84;
+        spinGroup.add(crossV); spinGroup.add(crossH);
+      }
+
+      group.userData = { type, color, floatGroup, spinGroup, phase: Math.random() * Math.PI * 2 };
+      return group;
+    }
+
+    // --- CHESS ENGINE & PLAYER COLOR STATE ---
+    const game = new Chess();
+    const pieceMeshes = {};
+    let selectedSquare = null;
+    let legalMovesForSelected = [];
+    let vsAI = true;
+    let playerColor = 'w'; // 'w' = Ivory Marble, 'b' = Volcanic Obsidian
+    let aiDifficulty = 1;
+    let actionCamEnabled = true;
+    let isAnimating = false;
+    let camPreset = 0;
+
+    window.selectPlayerColor = function(color) {
+      playerColor = color;
+      document.getElementById('pick-white').classList.toggle('selected', color === 'w');
+      document.getElementById('pick-black').classList.toggle('selected', color === 'b');
+      playSound('select');
+    };
+
+    function getAIColor() {
+      return playerColor === 'w' ? 'b' : 'w';
+    }
+
+    function setCameraForPlayer() {
+      if (playerColor === 'b') {
+        camera.position.set(0, 8.2, -9.4);
+        camPreset = 1;
+        document.getElementById('btn-cam').textContent = '🎥 View: Obsidian';
+      } else {
+        camera.position.set(0, 8.2, 9.4);
+        camPreset = 0;
+        document.getElementById('btn-cam').textContent = '🎥 View: Marble';
+      }
+      controls.target.set(0, 0.3, 0);
+    }
 
     function squareToWorld(sq) {
-      const file = sq.charCodeAt(0) - 97;
-      const rank = parseInt(sq[1], 10) - 1;
-      const x = (file - 3.5) * 1.1;
-      const z = (3.5 - rank) * 1.1;
-      return new THREE.Vector3(x, 0, z);
+      const f = files.indexOf(sq[0]);
+      const r = 8 - parseInt(sq[1], 10);
+      return new THREE.Vector3(f - 3.5, 0.07, r - 3.5);
     }
 
-    function buildBoard() {
-      const plinth = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.36, 10.0), MATS.boardFrame);
-      plinth.position.y = -0.26;
-      plinth.receiveShadow = true;
-      boardGroup.add(plinth);
+    function syncBoardImmediate() {
+      Object.values(pieceMeshes).forEach(m => boardGroup.remove(m));
+      for (const k in pieceMeshes) delete pieceMeshes[k];
 
-      const trim = new THREE.Mesh(new THREE.BoxGeometry(9.18, 0.38, 9.18), MATS.frameGold);
-      trim.position.y = -0.24;
-      boardGroup.add(trim);
-
-      const sqGeo = new THREE.BoxGeometry(1.06, 0.14, 1.06);
-      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-
-      for (let f = 0; f < 8; f++) {
-        for (let r = 0; r < 8; r++) {
-          const isLight = (f + r) % 2 !== 0;
-          const sqName = `${files[f]}${r + 1}`;
-          const mesh = new THREE.Mesh(sqGeo, isLight ? MATS.boardLight.clone() : MATS.boardDark.clone());
-          const pos = squareToWorld(sqName);
-          mesh.position.set(pos.x, -0.07, pos.z);
-          mesh.receiveShadow = true;
-          mesh.userData = { square: sqName, isLight, baseColor: mesh.material.color.clone() };
-          boardGroup.add(mesh);
-          squareMeshes.push(mesh);
-          squareMap.set(sqName, mesh);
-        }
-      }
-
-      const ringGeo = new THREE.RingGeometry(0.28, 0.40, 32);
-      ringGeo.rotateX(-Math.PI / 2);
-      squareMeshes.forEach(sq => {
-        const ringMat = new THREE.MeshBasicMaterial({
-          color: 0xF5C542,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.0
-        });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.set(sq.position.x, 0.012, sq.position.z);
-        boardGroup.add(ring);
-        sq.userData.ring = ring;
-      });
-    }
-    buildBoard();
-
-    // ============================================================================
-    // 5. ORIGINAL WEB CANVAS SCULPTED ETHIOPIAN ROYAL PIECES
-    // ============================================================================
-    function createLalibelaCross(mat, scale = 1) {
-      const cross = new THREE.Group();
-      const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.06 * scale, 0.28 * scale, 0.06 * scale), mat);
-      const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.22 * scale, 0.06 * scale, 0.06 * scale), mat);
-      hBar.position.y = 0.03 * scale;
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09 * scale, 0.018 * scale, 8, 20), mat);
-      ring.position.y = 0.03 * scale;
-      cross.add(vBar, hBar, ring);
-      return cross;
-    }
-
-    function createPedestal(bodyMat, accentMat) {
-      const base = new THREE.Group();
-      const step1 = new THREE.Mesh(new THREE.CylinderGeometry(0.39, 0.43, 0.09, 24), bodyMat);
-      step1.position.y = 0.045;
-      step1.castShadow = true;
-      step1.receiveShadow = true;
-
-      const runeRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.024, 10, 28), accentMat);
-      runeRing.rotation.x = Math.PI / 2;
-      runeRing.position.y = 0.095;
-
-      const step2 = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.08, 24), bodyMat);
-      step2.position.y = 0.13;
-      step2.castShadow = true;
-
-      base.add(step1, runeRing, step2);
-      return { base, runeRing };
-    }
-
-    function createEthiopianPieceMesh(type, color) {
-      const isWhite = color === 'w';
-      const bodyMat = isWhite ? MATS.marble : MATS.obsidian;
-      const accentMat = (isWhite ? MATS.marbleGold : MATS.obsidianEmber).clone();
-
-      const root = new THREE.Group();
-      const { base, runeRing } = createPedestal(bodyMat, accentMat);
-      root.add(base);
-
-      const bodyGroup = new THREE.Group();
-      root.add(bodyGroup);
-      let floatPart = null;
-
-      switch (type) {
-        case 'p': {
-          // Gasha Jagre (Royal Guard with Conical Gasha Shield & Spear)
-          const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.27, 0.45, 20), bodyMat);
-          torso.position.y = 0.38;
-          torso.castShadow = true;
-
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 20, 16), bodyMat);
-          head.position.y = 0.70;
-          head.castShadow = true;
-
-          const headband = new THREE.Mesh(new THREE.TorusGeometry(0.142, 0.02, 8, 24), accentMat);
-          headband.rotation.x = Math.PI / 2;
-          headband.position.y = 0.72;
-
-          const shieldGroup = new THREE.Group();
-          const shield = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.09, 20), accentMat);
-          shield.rotation.x = Math.PI / 2;
-          shield.position.set(0, 0.44, isWhite ? -0.22 : 0.22);
-          if (!isWhite) shield.rotation.x = -Math.PI / 2;
-
-          const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.75, 8), accentMat);
-          spear.position.set(isWhite ? 0.21 : -0.21, 0.52, 0);
-          shieldGroup.add(shield, spear);
-          floatPart = shieldGroup;
-
-          bodyGroup.add(torso, head, headband, shieldGroup);
-          break;
-        }
-        case 'r': {
-          // Hawilt Stele (Aksumite Obelisk with False Door & Rounded Crown)
-          const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.78, 0.32), bodyMat);
-          shaft.position.y = 0.55;
-          shaft.castShadow = true;
-
-          const falseDoor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.35), accentMat);
-          falseDoor.position.y = 0.30;
-
-          const rib1 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.04, 0.35), accentMat);
-          rib1.position.y = 0.58;
-          const rib2 = rib1.clone();
-          rib2.position.y = 0.76;
-
-          const apexGroup = new THREE.Group();
-          const apex = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.28, 24), accentMat);
-          apex.rotation.x = Math.PI / 2;
-          apex.position.y = 1.04;
-          apexGroup.add(apex);
-          floatPart = apexGroup;
-
-          bodyGroup.add(shaft, falseDoor, rib1, rib2, apexGroup);
-          break;
-        }
-        case 'n': {
-          // Feresegna (Ethiopian Royal Warhorse)
-          const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.29, 0.26, 20), bodyMat);
-          plinth.position.y = 0.29;
-          plinth.castShadow = true;
-
-          const dir = isWhite ? -1 : 1;
-          const neck = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.52, 0.30), bodyMat);
-          neck.position.set(0, 0.62, dir * 0.04);
-          neck.rotation.x = dir * 0.28;
-          neck.castShadow = true;
-
-          const snout = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.34, 16), bodyMat);
-          snout.rotation.x = dir * (Math.PI / 2.2);
-          snout.position.set(0, 0.80, dir * 0.20);
-          snout.castShadow = true;
-
-          const crestGroup = new THREE.Group();
-          const chamfron = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.12), accentMat);
-          chamfron.position.set(0, 0.68, -dir * 0.12);
-          chamfron.rotation.x = dir * 0.28;
-          crestGroup.add(chamfron);
-          floatPart = crestGroup;
-
-          bodyGroup.add(plinth, neck, snout, crestGroup);
-          break;
-        }
-        case 'b': {
-          // Abuna (Cleric with Mitre & Floating Lalibela Processional Cross)
-          const pts = [
-            new THREE.Vector2(0.0, 0.16),
-            new THREE.Vector2(0.29, 0.16),
-            new THREE.Vector2(0.22, 0.52),
-            new THREE.Vector2(0.15, 0.78),
-            new THREE.Vector2(0.20, 0.92),
-            new THREE.Vector2(0.0, 1.06)
-          ];
-          const robe = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), bodyMat);
-          robe.castShadow = true;
-
-          const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 10, 24), accentMat);
-          collar.rotation.x = Math.PI / 2;
-          collar.position.y = 0.78;
-
-          const cross = createLalibelaCross(accentMat, 0.95);
-          cross.position.y = 1.24;
-          floatPart = cross;
-
-          bodyGroup.add(robe, collar, cross);
-          break;
-        }
-        case 'q': {
-          // Itege (Empress with Pleated Gown & Floating Solar Halo Tiara)
-          const pts = [
-            new THREE.Vector2(0.0, 0.16),
-            new THREE.Vector2(0.32, 0.16),
-            new THREE.Vector2(0.24, 0.56),
-            new THREE.Vector2(0.16, 0.88),
-            new THREE.Vector2(0.22, 1.08),
-            new THREE.Vector2(0.0, 1.16)
-          ];
-          const gown = new THREE.Mesh(new THREE.LatheGeometry(pts, 28), bodyMat);
-          gown.castShadow = true;
-
-          const necklace = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.028, 10, 28), accentMat);
-          necklace.rotation.x = Math.PI / 2;
-          necklace.position.y = 0.90;
-
-          const tiaraGroup = new THREE.Group();
-          const halo = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.026, 12, 28), accentMat);
-          halo.position.y = 1.32;
-          const sunGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), accentMat);
-          sunGem.position.y = 1.32;
-          tiaraGroup.add(halo, sunGem);
-          floatPart = tiaraGroup;
-
-          bodyGroup.add(gown, necklace, tiaraGroup);
-          break;
-        }
-        case 'k': {
-          // Niguse Negest (Emperor of Ethiopia with Tiered Imperial Crown)
-          const pts = [
-            new THREE.Vector2(0.0, 0.16),
-            new THREE.Vector2(0.34, 0.16),
-            new THREE.Vector2(0.27, 0.62),
-            new THREE.Vector2(0.20, 0.96),
-            new THREE.Vector2(0.26, 1.15),
-            new THREE.Vector2(0.0, 1.22)
-          ];
-          const robe = new THREE.Mesh(new THREE.LatheGeometry(pts, 28), bodyMat);
-          robe.castShadow = true;
-
-          const crownGroup = new THREE.Group();
-          const tier1 = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.19, 0.14, 12), accentMat);
-          tier1.position.y = 1.24;
-          const tier2 = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.12, 12), accentMat);
-          tier2.position.y = 1.36;
-          const cross = createLalibelaCross(accentMat, 1.05);
-          cross.position.y = 1.56;
-          crownGroup.add(tier1, tier2, cross);
-          floatPart = crownGroup;
-
-          bodyGroup.add(robe, crownGroup);
-          break;
-        }
-      }
-
-      root.userData = {
-        type,
-        color,
-        bodyGroup,
-        floatPart,
-        runeRing,
-        accentMat,
-        phase: Math.random() * Math.PI * 2
-      };
-      return root;
-    }
-
-    // ============================================================================
-    // 6. SHATTER PARTICLE ENGINE
-    // ============================================================================
-    const activeShards = [];
-    const shardGeo = new THREE.DodecahedronGeometry(0.085, 0);
-
-    function triggerShatter(worldPos, victimColor) {
-      sfx.playShatter();
-      const isWhite = victimColor === 'w';
-      const primaryMat = isWhite ? MATS.marble : MATS.obsidian;
-      const glowMat = isWhite ? MATS.marbleGold : MATS.obsidianEmber;
-
-      strikeLight.color.setHex(isWhite ? 0xF5C542 : 0xFF4500);
-      strikeLight.position.set(worldPos.x, 0.9, worldPos.z);
-      strikeLight.intensity = 10;
-
-      for (let i = 0; i < 34; i++) {
-        const mat = (i % 3 === 0 ? glowMat : primaryMat).clone();
-        mat.transparent = true;
-        const shard = new THREE.Mesh(shardGeo, mat);
-        const s = 0.55 + Math.random() * 1.15;
-        shard.scale.set(s, s * (0.6 + Math.random() * 0.8), s);
-        shard.position.set(
-          worldPos.x + (Math.random() - 0.5) * 0.35,
-          0.25 + Math.random() * 0.75,
-          worldPos.z + (Math.random() - 0.5) * 0.35
-        );
-        shard.castShadow = true;
-        scene.add(shard);
-
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 1.4 + Math.random() * 3.2;
-        activeShards.push({
-          mesh: shard,
-          vx: Math.cos(angle) * speed,
-          vy: 2.2 + Math.random() * 3.4,
-          vz: Math.sin(angle) * speed,
-          rx: (Math.random() - 0.5) * 12,
-          ry: (Math.random() - 0.5) * 12,
-          rz: (Math.random() - 0.5) * 12,
-          age: 0,
-          life: 1.35 + Math.random() * 0.5
-        });
-      }
-    }
-
-    // ============================================================================
-    // 7. GAME STATE, WIZARD'S CHESS CHOREOGRAPHY & ROYAL AI
-    // ============================================================================
-    const chess = new Chess();
-    const pieceMeshes = new Map();
-    let selectedSquare = null;
-    let validMoves = [];
-    let isAnimating = false;
-    let vsAI = true;
-    let aiDifficulty = 1; // 0: Dejazmach (Easy), 1: Ras (Med), 2: Nigus (Hard)
-    let actionCamEnabled = true;
-    let capturedCounts = { w: 0, b: 0 };
-    let activeAction = null;
-
-    function syncBoardFromFEN() {
-      pieceMeshes.forEach(mesh => scene.remove(mesh));
-      pieceMeshes.clear();
-
-      const board = chess.board();
-      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const board = game.board();
       for (let r = 0; r < 8; r++) {
         for (let f = 0; f < 8; f++) {
-          const cell = board[r][f];
-          if (cell) {
-            const sq = `${files[f]}${8 - r}`;
-            const mesh = createEthiopianPieceMesh(cell.type, cell.color);
-            const pos = squareToWorld(sq);
-            mesh.position.copy(pos);
+          const p = board[r][f];
+          if (p) {
+            const sq = files[f] + (8 - r);
+            const mesh = createEthiopianPiece(p.type, p.color);
+            mesh.position.copy(squareToWorld(sq));
             mesh.userData.square = sq;
-            scene.add(mesh);
-            pieceMeshes.set(sq, mesh);
+            boardGroup.add(mesh);
+            pieceMeshes[sq] = mesh;
           }
         }
       }
-      recalculateCaptured();
       updateHUD();
     }
 
-    function recalculateCaptured() {
-      const startCounts = { p: 8, r: 2, n: 2, b: 2, q: 1, k: 1 };
-      const current = { w: { p:0,r:0,n:0,b:0,q:0,k:0 }, b: { p:0,r:0,n:0,b:0,q:0,k:0 } };
-      const board = chess.board();
-      for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-          const c = board[r][f];
-          if (c) current[c.color][c.type]++;
-        }
-      }
-      let lostW = 0, lostB = 0;
-      Object.keys(startCounts).forEach(t => {
-        lostW += Math.max(0, startCounts[t] - current.w[t]);
-        lostB += Math.max(0, startCounts[t] - current.b[t]);
-      });
-      capturedCounts.w = lostW;
-      capturedCounts.b = lostB;
-      document.getElementById('cap-black').textContent = lostB;
-      document.getElementById('cap-white').textContent = lostW;
-    }
-
-    function clearHighlights() {
-      squareMeshes.forEach(sq => {
-        sq.material.color.copy(sq.userData.baseColor);
-        sq.material.emissive.setHex(0x000000);
-        sq.userData.ring.material.opacity = 0;
-      });
-    }
-
-    function highlightSelection(sqName) {
-      clearHighlights();
-      const sqMesh = squareMap.get(sqName);
-      if (sqMesh) {
-        sqMesh.material.emissive.setHex(0x5A4408);
-        sqMesh.userData.ring.material.color.setHex(0xF5C542);
-        sqMesh.userData.ring.material.opacity = 0.95;
-      }
-
-      validMoves.forEach(m => {
-        const targetSq = squareMap.get(m.to);
-        if (!targetSq) return;
-        const isCapture = m.captured || m.flags.includes('e');
-        targetSq.userData.ring.material.color.setHex(isCapture ? 0xFF4500 : 0xF5C542);
-        targetSq.userData.ring.material.opacity = 0.85;
-        if (isCapture) targetSq.material.emissive.setHex(0x4A1205);
-      });
-    }
-
-    function showBanner(text, duration = 2200) {
-      const banner = document.getElementById('status-banner');
-      banner.textContent = text;
-      banner.classList.add('visible');
-      clearTimeout(banner._timer);
-      if (duration > 0) {
-        banner._timer = setTimeout(() => banner.classList.remove('visible'), duration);
+    // --- SHATTER PHYSICS ---
+    const activeShards = [];
+    function spawnShatter(worldPos, color) {
+      playSound('shatter');
+      const mat = color === 'w' ? matMarble : matObsidian;
+      const accent = color === 'w' ? matGold : matEmber;
+      for (let i = 0; i < 34; i++) {
+        const size = 0.06 + Math.random() * 0.10;
+        const shard = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(size, 0),
+          i % 3 === 0 ? accent : mat
+        );
+        shard.position.copy(worldPos).add(new THREE.Vector3(0, 0.35 + Math.random() * 0.5, 0));
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 3.5;
+        shard.userData = {
+          vel: new THREE.Vector3(Math.cos(angle) * speed, 2.2 + Math.random() * 3.0, Math.sin(angle) * speed),
+          rot: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8),
+          life: 1.0
+        };
+        scene.add(shard);
+        activeShards.push(shard);
       }
     }
 
-    function updateHUD() {
-      const turn = chess.turn();
-      const swatch = document.getElementById('turn-swatch');
-      const turnText = document.getElementById('turn-text');
-
-      if (turn === 'w') {
-        swatch.classList.remove('black');
-        turnText.textContent = 'Marble Dynasty (ንጉስ)';
-      } else {
-        swatch.classList.add('black');
-        turnText.textContent = vsAI ? 'Obsidian AI Thinking...' : 'Obsidian Empire (እሳት)';
-      }
-
-      if (chess.in_checkmate()) {
-        const winner = turn === 'w' ? 'Obsidian Empire' : 'Marble Dynasty';
-        showBanner(`👑 CHECKMATE • ${winner} Reigns Supreme!`, 6000);
-      } else if (chess.in_draw() || chess.in_stalemate()) {
-        showBanner('ROYAL TRUCE • Match Drawn', 5000);
-      } else if (chess.in_check()) {
-        showBanner('⚔️ NIGUS IN CHECK!', 2400);
-      }
-    }
-
-    function executeMoveAnimated(moveObj) {
+    // --- MOVE & STRIKE ANIMATION ---
+    const activeAnimations = [];
+    function executeAnimatedMove(moveObj, onComplete) {
       isAnimating = true;
       clearHighlights();
 
-      const attackerMesh = pieceMeshes.get(moveObj.from);
-      let victimSquare = moveObj.to;
-      if (moveObj.flags.includes('e')) {
-        const file = moveObj.to[0];
-        const rank = moveObj.color === 'w' ? '5' : '4';
-        victimSquare = `${file}${rank}`;
-      }
-      const victimMesh = pieceMeshes.get(victimSquare);
-      const isCapture = Boolean(victimMesh);
+      const fromSq = moveObj.from;
+      const toSq = moveObj.to;
+      const attacker = pieceMeshes[fromSq];
+      const defender = pieceMeshes[toSq];
 
-      const startPos = squareToWorld(moveObj.from);
-      const targetPos = squareToWorld(moveObj.to);
+      const startPos = squareToWorld(fromSq);
+      const endPos = squareToWorld(toSq);
 
-      let savedCamPos = null;
-      let savedCamTarget = null;
-      if (isCapture && actionCamEnabled) {
-        savedCamPos = camera.position.clone();
-        savedCamTarget = controls.target.clone();
-      }
+      const savedCamPos = camera.position.clone();
+      const savedTarget = controls.target.clone();
 
-      if (!isCapture) sfx.playMove();
-
-      activeAction = {
-        type: isCapture ? 'attack' : 'move',
-        moveObj,
-        attackerMesh,
-        victimMesh,
-        victimSquare,
-        startPos,
-        targetPos,
-        savedCamPos,
-        savedCamTarget,
-        shattered: false,
-        elapsed: 0,
-        duration: isCapture ? 1.05 : 0.46
-      };
-    }
-
-    function finalizeAnimatedMove(action) {
-      const { moveObj, attackerMesh, victimMesh, victimSquare, targetPos, savedCamPos, savedCamTarget } = action;
-
-      if (victimMesh) {
-        scene.remove(victimMesh);
-        pieceMeshes.delete(victimSquare);
-      }
-
-      pieceMeshes.delete(moveObj.from);
-
-      if (moveObj.flags.includes('p')) {
-        scene.remove(attackerMesh);
-        const promotedMesh = createEthiopianPieceMesh(moveObj.promotion || 'q', moveObj.color);
-        promotedMesh.position.copy(targetPos);
-        promotedMesh.userData.square = moveObj.to;
-        scene.add(promotedMesh);
-        pieceMeshes.set(moveObj.to, promotedMesh);
+      if (defender && actionCamEnabled) {
+        showToast('⚔️ Royal Strike on ' + toSq.toUpperCase() + '!');
+        const mid = startPos.clone().lerp(endPos, 0.65);
+        camera.position.set(mid.x + 2.8, 3.8, mid.z + 2.8);
+        controls.target.copy(endPos);
       } else {
-        attackerMesh.position.copy(targetPos);
-        attackerMesh.rotation.set(0, 0, 0);
-        attackerMesh.userData.square = moveObj.to;
-        pieceMeshes.set(moveObj.to, attackerMesh);
+        playSound('move');
       }
 
-      if (moveObj.flags.includes('k') || moveObj.flags.includes('q')) {
-        const rank = moveObj.color === 'w' ? '1' : '8';
-        const rookFrom = moveObj.flags.includes('k') ? `h${rank}` : `a${rank}`;
-        const rookTo = moveObj.flags.includes('k') ? `f${rank}` : `d${rank}`;
-        const rookMesh = pieceMeshes.get(rookFrom);
-        if (rookMesh) {
-          pieceMeshes.delete(rookFrom);
-          rookMesh.position.copy(squareToWorld(rookTo));
-          rookMesh.userData.square = rookTo;
-          pieceMeshes.set(rookTo, rookMesh);
-        }
-      }
+      const duration = defender ? 0.82 : 0.40;
+      activeAnimations.push({
+        elapsed: 0,
+        duration,
+        shattered: false,
+        update(dt) {
+          this.elapsed += dt;
+          const t = Math.min(this.elapsed / this.duration, 1);
 
-      if (savedCamPos && savedCamTarget) {
-        camera.position.copy(savedCamPos);
-        controls.target.copy(savedCamTarget);
-      }
-
-      isAnimating = false;
-      activeAction = null;
-      recalculateCaptured();
-      updateHUD();
-
-      if (vsAI && !chess.game_over() && chess.turn() === 'b') {
-        setTimeout(triggerAIMove, 260);
-      }
-    }
-
-    const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
-
-    function evaluateBoard() {
-      let score = 0;
-      const board = chess.board();
-      for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-          const piece = board[r][f];
-          if (!piece) continue;
-          const centerBonus = (3.5 - Math.abs(3.5 - f)) * 6 + (3.5 - Math.abs(3.5 - r)) * 6;
-          const val = PIECE_VALUES[piece.type] + centerBonus;
-          score += piece.color === 'b' ? val : -val;
-        }
-      }
-      return score;
-    }
-
-    function triggerAIMove() {
-      if (chess.game_over() || chess.turn() !== 'b') return;
-      const moves = chess.moves({ verbose: true });
-      if (moves.length === 0) return;
-
-      let bestMove = moves[0];
-      let bestScore = -Infinity;
-      const noiseScale = aiDifficulty === 0 ? 180 : aiDifficulty === 1 ? 35 : 4;
-
-      for (const m of moves) {
-        chess.move(m);
-        let score = evaluateBoard() + (Math.random() * noiseScale);
-        if (m.captured) score += PIECE_VALUES[m.captured] * 0.35;
-        if (chess.in_check()) score += 45;
-
-        if (aiDifficulty >= 1) {
-          const replies = chess.moves({ verbose: true });
-          let maxReplyCapture = 0;
-          for (const rep of replies) {
-            if (rep.captured) maxReplyCapture = Math.max(maxReplyCapture, PIECE_VALUES[rep.captured]);
+          if (attacker) {
+            if (!defender) {
+              attacker.position.lerpVectors(startPos, endPos, t);
+              attacker.position.y = 0.07 + Math.sin(t * Math.PI) * 0.42;
+            } else {
+              if (t < 0.65) {
+                const subT = t / 0.65;
+                attacker.position.lerpVectors(startPos, endPos, subT * 0.82);
+                attacker.position.y = 0.07 + Math.sin(subT * Math.PI) * 0.62;
+              } else {
+                const subT = (t - 0.65) / 0.35;
+                attacker.position.lerpVectors(startPos.clone().lerp(endPos, 0.82), endPos, subT);
+                attacker.position.y = 0.07;
+                if (!this.shattered) {
+                  this.shattered = true;
+                  boardGroup.remove(defender);
+                  spawnShatter(endPos, defender.userData.color);
+                }
+              }
+            }
           }
-          score -= maxReplyCapture * 0.75;
-        }
-        chess.undo();
 
-        if (score > bestScore) {
-          bestScore = score;
-          bestMove = m;
+          if (t >= 1) {
+            if (defender && actionCamEnabled) {
+              setTimeout(() => {
+                camera.position.copy(savedCamPos);
+                controls.target.copy(savedTarget);
+              }, 360);
+            }
+            syncBoardImmediate();
+            isAnimating = false;
+            if (onComplete) onComplete();
+            return true;
+          }
+          return false;
         }
-      }
-
-      const executed = chess.move(bestMove);
-      if (executed) executeMoveAnimated(executed);
+      });
     }
 
-    // ============================================================================
-    // 8. RAYCASTING & MENU CONTROLS
-    // ============================================================================
+    // --- TOUCH, RAYCASTING & PIECE LORE POPUP ---
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let pointerDownPos = { x: 0, y: 0 };
 
-    renderer.domElement.addEventListener('pointerdown', e => {
-      pointerDownPos.x = e.clientX;
-      pointerDownPos.y = e.clientY;
-    });
+    function clearHighlights() {
+      Object.values(highlightMeshes).forEach(h => (h.visible = false));
+    }
 
-    renderer.domElement.addEventListener('pointerup', e => {
-      const dx = e.clientX - pointerDownPos.x;
-      const dy = e.clientY - pointerDownPos.y;
-      if (Math.hypot(dx, dy) > 9) return;
-      handleBoardTap(e);
-    });
+    function selectSquare(sq) {
+      clearHighlights();
+      selectedSquare = sq;
+      if (!sq) return;
 
-    function handleBoardTap(e) {
+      playSound('select');
+      legalMovesForSelected = game.moves({ square: sq, verbose: true });
+      highlightMeshes[sq].material.color.setHex(0x00E5FF);
+      highlightMeshes[sq].visible = true;
+
+      legalMovesForSelected.forEach(m => {
+        const hl = highlightMeshes[m.to];
+        hl.material.color.setHex(m.captured ? 0xFF3D00 : 0xFFD54F);
+        hl.visible = true;
+      });
+    }
+
+    function handleBoardTap(clientX, clientY) {
       if (!document.getElementById('main-menu').classList.contains('hidden')) return;
-      if (isAnimating || chess.game_over()) return;
-      if (vsAI && chess.turn() === 'b') return;
+      if (isAnimating || game.game_over()) return;
 
-      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      pointer.x = (clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
-      const pieceObjects = Array.from(pieceMeshes.values());
-      const hits = raycaster.intersectObjects([...squareMeshes, ...pieceObjects], true);
-      if (hits.length === 0) {
-        selectedSquare = null;
-        validMoves = [];
-        clearHighlights();
+      const hits = raycaster.intersectObjects(boardGroup.children, true);
+      let tappedSq = null;
+      for (const hit of hits) {
+        let obj = hit.object;
+        while (obj && !obj.userData.square) obj = obj.parent;
+        if (obj && obj.userData.square) {
+          tappedSq = obj.userData.square;
+          break;
+        }
+      }
+
+      if (!tappedSq) {
+        selectSquare(null);
+        hidePieceInfo();
         return;
       }
 
-      let hitObj = hits[0].object;
-      while (hitObj && !hitObj.userData.square && hitObj.parent) {
-        hitObj = hitObj.parent;
-      }
-      const tappedSq = hitObj?.userData?.square;
-      if (!tappedSq) return;
-
-      const moveCandidate = validMoves.find(m => m.to === tappedSq);
-      if (selectedSquare && moveCandidate) {
-        const moveResult = chess.move({
-          from: selectedSquare,
-          to: tappedSq,
-          promotion: 'q'
-        });
+      // If user tapped a legal move destination for their currently selected piece
+      const chosenMove = legalMovesForSelected.find(m => m.to === tappedSq);
+      if (selectedSquare && chosenMove && (!vsAI || game.turn() === playerColor)) {
+        hidePieceInfo();
+        const moveResult = game.move({ from: selectedSquare, to: tappedSq, promotion: 'q' });
         selectedSquare = null;
-        validMoves = [];
-        if (moveResult) executeMoveAnimated(moveResult);
+        legalMovesForSelected = [];
+        if (moveResult) {
+          executeAnimatedMove(moveResult, () => {
+            if (vsAI && !game.game_over() && game.turn() === getAIColor()) {
+              setTimeout(makeAIMove, 340);
+            }
+          });
+        }
         return;
       }
 
-      const pieceAtSq = chess.get(tappedSq);
-      if (pieceAtSq && pieceAtSq.color === chess.turn()) {
-        selectedSquare = tappedSq;
-        validMoves = chess.moves({ square: tappedSq, verbose: true });
-        sfx.playSelect();
-        highlightSelection(tappedSq);
+      // If user tapped any piece on the board, show its Ethiopian Royal Lore Card!
+      const pieceOnSq = game.get(tappedSq);
+      if (pieceOnSq) {
+        showPieceInfo(pieceOnSq, tappedSq);
+        if (pieceOnSq.color === game.turn() && (!vsAI || game.turn() === playerColor)) {
+          selectSquare(tappedSq);
+        } else {
+          playSound('select');
+          clearHighlights();
+          selectedSquare = null;
+          legalMovesForSelected = [];
+          highlightMeshes[tappedSq].material.color.setHex(0xFF7043);
+          highlightMeshes[tappedSq].visible = true;
+        }
       } else {
-        selectedSquare = null;
-        validMoves = [];
-        clearHighlights();
+        selectSquare(null);
+        hidePieceInfo();
       }
     }
 
-    // Menu & HUD Button Listeners
-    const mainMenu = document.getElementById('main-menu');
-    const resumeBtn = document.getElementById('menu-resume-btn');
+    let downPos = { x: 0, y: 0 };
+    renderer.domElement.addEventListener('pointerdown', e => {
+      downPos = { x: e.clientX, y: e.clientY };
+    });
+    renderer.domElement.addEventListener('pointerup', e => {
+      const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+      if (dist < 12) handleBoardTap(e.clientX, e.clientY);
+    });
 
-    function startNewMatch(aiMode) {
+    // --- ETHIOPIAN ROYAL AI (Supports playing as Black OR White) ---
+    function makeAIMove() {
+      if (game.game_over() || game.turn() !== getAIColor()) return;
+      const moves = game.moves({ verbose: true });
+      if (!moves.length) return;
+
+      const pieceVal = { p: 10, n: 30, b: 33, r: 50, q: 95, k: 900 };
+      moves.sort((a, b) => {
+        const noise = aiDifficulty === 0 ? 25 : aiDifficulty === 1 ? 6 : 1;
+        const centerA = (a.to === 'd4' || a.to === 'e4' || a.to === 'd5' || a.to === 'e5') ? 8 : 0;
+        const centerB = (b.to === 'd4' || b.to === 'e4' || b.to === 'd5' || b.to === 'e5') ? 8 : 0;
+        const scoreA = (a.captured ? pieceVal[a.captured] : 0) + centerA + Math.random() * noise;
+        const scoreB = (b.captured ? pieceVal[b.captured] : 0) + centerB + Math.random() * noise;
+        return scoreB - scoreA;
+      });
+
+      const moveResult = game.move(moves[0]);
+      if (moveResult) executeAnimatedMove(moveResult);
+    }
+
+    // --- MENU & HUD FUNCTIONS ---
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function updateHUD() {
+      const statusEl = document.getElementById('status-text');
+      const dotEl = document.getElementById('turn-dot');
+      const turn = game.turn();
+
+      dotEl.style.background = turn === 'w' ? '#FFE082' : '#FF5722';
+      dotEl.style.boxShadow = turn === 'w' ? '0 0 10px #FFE082' : '0 0 10px #FF5722';
+
+      if (game.in_checkmate()) {
+        statusEl.textContent = (turn === 'w' ? 'Obsidian' : 'Marble') + ' Wins! (ድል)';
+        showToast('👑 ድል! Royal Checkmate!');
+      } else if (game.in_draw()) {
+        statusEl.textContent = 'Royal Draw';
+      } else {
+        const side = turn === 'w' ? 'Marble (ንጉስ)' : 'Obsidian (እሳት)';
+        statusEl.textContent = side + (game.in_check() ? ' • CHECK!' : '');
+      }
+    }
+
+    window.startMatch = function(aiMode) {
       vsAI = aiMode;
-      const btnMode = document.getElementById('btn-mode');
-      btnMode.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
-      btnMode.classList.toggle('active', vsAI);
-      chess.reset();
-      selectedSquare = null;
-      validMoves = [];
-      clearHighlights();
-      syncBoardFromFEN();
-      camera.position.copy(CAM_VIEWS[currentCamKey].pos);
-      controls.target.copy(CAM_VIEWS[currentCamKey].look);
-      resumeBtn.style.display = 'flex';
-      mainMenu.classList.add('hidden');
-      showBanner(vsAI ? '⚔️ NIGUS • Marble vs Obsidian AI' : '⚔️ NIGUS • 2-Player Royal Duel');
-    }
+      const btn = document.getElementById('btn-mode');
+      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
+      btn.classList.toggle('active', vsAI);
+      game.reset();
+      selectSquare(null);
+      hidePieceInfo();
+      syncBoardImmediate();
+      setCameraForPlayer();
+      document.getElementById('btn-resume').style.display = 'flex';
+      closeMenu();
 
-    document.getElementById('menu-start-ai').addEventListener('click', () => startNewMatch(true));
-    document.getElementById('menu-start-2p').addEventListener('click', () => startNewMatch(false));
-    resumeBtn.addEventListener('click', () => {
-      camera.position.copy(CAM_VIEWS[currentCamKey].pos);
-      controls.target.copy(CAM_VIEWS[currentCamKey].look);
-      mainMenu.classList.add('hidden');
-    });
-    document.getElementById('btn-open-menu').addEventListener('click', () => {
-      resumeBtn.style.display = 'flex';
-      mainMenu.classList.remove('hidden');
-    });
+      const sideLabel = playerColor === 'w' ? 'Ivory Marble' : 'Obsidian Ember';
+      showToast(vsAI ? `⚔️ Playing as ${sideLabel} vs AI` : '⚔️ 2-Player Royal Duel Started');
 
-    document.getElementById('menu-ai-rank').addEventListener('click', () => {
+      // If player chose Obsidian (Black) against AI, let AI make the first move as White!
+      if (vsAI && playerColor === 'b' && game.turn() === 'w') {
+        setTimeout(makeAIMove, 500);
+      }
+    };
+
+    window.openMenu = function() {
+      document.getElementById('main-menu').classList.remove('hidden');
+    };
+
+    window.closeMenu = function() {
+      document.getElementById('main-menu').classList.add('hidden');
+      setCameraForPlayer();
+    };
+
+    window.cycleDifficulty = function() {
       aiDifficulty = (aiDifficulty + 1) % 3;
-      const ranks = ['Dejazmach (Easy)', 'Ras (Med)', 'Nigus (Hard)'];
-      document.getElementById('menu-rank-label').textContent = ranks[aiDifficulty];
-    });
+      const names = ['Dejazmach (Easy)', 'Ras (Med)', 'Nigus (Hard)'];
+      document.getElementById('diff-label').textContent = names[aiDifficulty];
+    };
 
-    function toggleAllSound() {
-      sfx.enabled = !sfx.enabled;
-      document.getElementById('menu-sound-label').textContent = sfx.enabled ? 'ON' : 'OFF';
-      const btnSfx = document.getElementById('btn-sfx');
-      btnSfx.classList.toggle('active', sfx.enabled);
-      btnSfx.textContent = sfx.enabled ? '🔊' : '🔇';
-    }
-    document.getElementById('menu-sound-btn').addEventListener('click', toggleAllSound);
-    document.getElementById('btn-sfx').addEventListener('click', toggleAllSound);
+    window.toggleSound = function() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sfx-label').textContent = soundEnabled ? 'ON' : 'OFF';
+    };
 
-    document.getElementById('btn-new').addEventListener('click', () => {
-      if (isAnimating) return;
-      chess.reset();
-      selectedSquare = null;
-      validMoves = [];
-      clearHighlights();
-      syncBoardFromFEN();
-      showBanner('NEW ROYAL MATCH STARTED');
-    });
-
-    document.getElementById('btn-undo').addEventListener('click', () => {
-      if (isAnimating) return;
-      if (vsAI) {
-        chess.undo();
-        chess.undo();
-      } else {
-        chess.undo();
-      }
-      selectedSquare = null;
-      validMoves = [];
-      clearHighlights();
-      syncBoardFromFEN();
-      showBanner('MOVE UNDONE');
-    });
-
-    document.getElementById('btn-mode').addEventListener('click', e => {
+    window.toggleMode = function() {
       vsAI = !vsAI;
-      e.currentTarget.classList.toggle('active', vsAI);
-      e.currentTarget.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
-      showBanner(vsAI ? 'MODE: VS ETHIOPIAN AI' : 'MODE: 2-PLAYER PASS & PLAY');
-      updateHUD();
-      if (vsAI && !chess.game_over() && chess.turn() === 'b' && !isAnimating) {
-        setTimeout(triggerAIMove, 300);
+      const btn = document.getElementById('btn-mode');
+      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
+      btn.classList.toggle('active', vsAI);
+      showToast(vsAI ? 'Mode: vs Royal AI' : 'Mode: 2-Player Duel');
+      if (vsAI && !game.game_over() && game.turn() === getAIColor() && !isAnimating) {
+        setTimeout(makeAIMove, 350);
       }
-    });
+    };
 
-    document.getElementById('btn-cam').addEventListener('click', e => {
-      const keys = Object.keys(CAM_VIEWS);
-      const nextIdx = (keys.indexOf(currentCamKey) + 1) % keys.length;
-      currentCamKey = keys[nextIdx];
-      const view = CAM_VIEWS[currentCamKey];
-      camera.position.copy(view.pos);
-      controls.target.copy(view.look);
-      e.currentTarget.textContent = view.label;
-    });
+    window.cycleCamera = function() {
+      camPreset = (camPreset + 1) % 3;
+      const btn = document.getElementById('btn-cam');
+      if (camPreset === 0) {
+        camera.position.set(0, 8.2, 9.4);
+        btn.textContent = '🎥 View: Marble';
+      } else if (camPreset === 1) {
+        camera.position.set(0, 8.2, -9.4);
+        btn.textContent = '🎥 View: Obsidian';
+      } else {
+        camera.position.set(0, 13.8, 0.01);
+        btn.textContent = '🎥 View: Tactical';
+      }
+      controls.target.set(0, 0.3, 0);
+    };
 
-    document.getElementById('btn-action-cam').addEventListener('click', e => {
+    window.toggleActionCam = function() {
       actionCamEnabled = !actionCamEnabled;
-      e.currentTarget.classList.toggle('active', actionCamEnabled);
-      showBanner(actionCamEnabled ? 'ACTION CAM: ENABLED' : 'ACTION CAM: OFF');
-    });
+      document.getElementById('btn-fx').classList.toggle('active', actionCamEnabled);
+      showToast(actionCamEnabled ? '⚡ Action Cam ON' : '⚡ Action Cam OFF');
+    };
+
+    window.undoMove = function() {
+      if (isAnimating) return;
+      game.undo();
+      if (vsAI && game.turn() === getAIColor()) game.undo();
+      selectSquare(null);
+      hidePieceInfo();
+      syncBoardImmediate();
+      showToast('↩️ Move Undone');
+    };
+
+    window.resetGame = function() {
+      if (isAnimating) return;
+      game.reset();
+      selectSquare(null);
+      hidePieceInfo();
+      syncBoardImmediate();
+      setCameraForPlayer();
+      showToast('🔄 New Match Started');
+      if (vsAI && playerColor === 'b' && game.turn() === 'w') {
+        setTimeout(makeAIMove, 500);
+      }
+    };
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -1478,132 +1163,58 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // ============================================================================
-    // 9. MAIN RENDER & ANIMATION LOOP
-    // ============================================================================
-    const clock = new THREE.Clock();
-
-    function animate() {
+    // --- MAIN RENDER LOOP ---
+    let lastTime = performance.now();
+    function animate(now) {
       requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const elapsed = clock.getElapsedTime();
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
 
-      // Slow cinematic royal turntable while Main Menu is open
-      if (!mainMenu.classList.contains('hidden')) {
-        const angle = elapsed * 0.22;
-        camera.position.x = Math.sin(angle) * 11.2;
-        camera.position.z = Math.cos(angle) * 11.2;
-        camera.position.y = 7.8;
-        controls.target.set(0, 0.3, 0);
+      const menuOpen = !document.getElementById('main-menu').classList.contains('hidden');
+      if (menuOpen) {
+        const angle = now * 0.00025;
+        camera.position.x = Math.sin(angle) * 10.5;
+        camera.position.z = Math.cos(angle) * 10.5;
+        camera.position.y = 7.2;
+        controls.target.set(0, 0.4, 0);
       }
 
-      const currentTurn = chess.turn();
-      pieceMeshes.forEach(mesh => {
-        const { floatPart, accentMat, phase, color, square } = mesh.userData;
-        const isSelected = square === selectedSquare;
-        const isTurnSide = color === currentTurn;
-
-        if (floatPart) {
-          floatPart.position.y = Math.sin(elapsed * 2.6 + phase) * 0.032;
-          if (mesh.userData.type === 'b' || mesh.userData.type === 'k' || mesh.userData.type === 'q') {
-            floatPart.rotation.y = Math.sin(elapsed * 1.4 + phase) * 0.35;
-          }
-        }
-
-        if (isSelected) {
-          accentMat.emissiveIntensity = 1.6 + Math.sin(elapsed * 8) * 0.4;
-          mesh.userData.bodyGroup.position.y = 0.16 + Math.sin(elapsed * 6) * 0.03;
-        } else {
-          mesh.userData.bodyGroup.position.y = THREE.MathUtils.lerp(mesh.userData.bodyGroup.position.y, 0, dt * 10);
-          const baseGlow = color === 'w' ? 0.25 : 0.65;
-          const pulse = isTurnSide ? Math.sin(elapsed * 3 + phase) * 0.18 : 0;
-          accentMat.emissiveIntensity = baseGlow + pulse;
-        }
+      Object.values(pieceMeshes).forEach(mesh => {
+        const fg = mesh.userData.floatGroup;
+        const sg = mesh.userData.spinGroup;
+        if (fg) fg.position.y = Math.sin(now * 0.003 + mesh.userData.phase) * 0.035;
+        if (sg) sg.rotation.y += dt * 0.9;
       });
 
-      if (activeAction) {
-        activeAction.elapsed += dt;
-        const t = Math.min(1, activeAction.elapsed / activeAction.duration);
-        const { attackerMesh, victimMesh, startPos, targetPos } = activeAction;
-
-        if (activeAction.type === 'move') {
-          const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          attackerMesh.position.lerpVectors(startPos, targetPos, ease);
-          attackerMesh.position.y = Math.sin(t * Math.PI) * 0.55;
-        } else if (activeAction.type === 'attack') {
-          if (actionCamEnabled) {
-            const mid = new THREE.Vector3().lerpVectors(startPos, targetPos, 0.65);
-            const camOffset = new THREE.Vector3(3.2, 3.6, 3.2);
-            camera.position.lerp(mid.clone().add(camOffset), dt * 5);
-            controls.target.lerp(targetPos, dt * 7);
-          }
-
-          if (t < 0.45) {
-            const p = t / 0.45;
-            const stopPos = new THREE.Vector3().lerpVectors(startPos, targetPos, 0.68);
-            attackerMesh.position.lerpVectors(startPos, stopPos, p);
-            attackerMesh.position.y = Math.sin(p * Math.PI) * 0.25;
-          } else if (t < 0.68) {
-            const p = (t - 0.45) / 0.23;
-            attackerMesh.position.y = p * 0.72;
-            attackerMesh.rotation.x = -p * 0.35;
-          } else {
-            const p = (t - 0.68) / 0.32;
-            const strikeStart = new THREE.Vector3().lerpVectors(startPos, targetPos, 0.68);
-            attackerMesh.position.lerpVectors(strikeStart, targetPos, Math.min(1, p * 1.4));
-            attackerMesh.position.y = Math.max(0, (1 - p * 1.4) * 0.72);
-            attackerMesh.rotation.x = (1 - p) * 0.25;
-
-            if (!activeAction.shattered && p >= 0.35) {
-              activeAction.shattered = true;
-              if (victimMesh) {
-                victimMesh.visible = false;
-                triggerShatter(targetPos, victimMesh.userData.color);
-              }
-            }
-          }
-        }
-
-        if (t >= 1) finalizeAnimatedMove(activeAction);
-      }
-
-      if (strikeLight.intensity > 0) {
-        strikeLight.intensity = Math.max(0, strikeLight.intensity - dt * 22);
+      for (let i = activeAnimations.length - 1; i >= 0; i--) {
+        if (activeAnimations[i].update(dt)) activeAnimations.splice(i, 1);
       }
 
       for (let i = activeShards.length - 1; i >= 0; i--) {
         const s = activeShards[i];
-        s.age += dt;
-        if (s.age >= s.life) {
-          scene.remove(s.mesh);
-          s.mesh.material.dispose();
+        s.userData.vel.y -= 9.8 * dt;
+        s.position.addScaledVector(s.userData.vel, dt);
+        s.rotation.x += s.userData.rot.x * dt;
+        s.rotation.y += s.userData.rot.y * dt;
+        if (s.position.y < 0.08) {
+          s.position.y = 0.08;
+          s.userData.vel.y *= -0.45;
+          s.userData.vel.x *= 0.7;
+          s.userData.vel.z *= 0.7;
+        }
+        s.userData.life -= dt * 0.75;
+        if (s.userData.life <= 0) {
+          scene.remove(s);
           activeShards.splice(i, 1);
-          continue;
         }
-        s.vy -= 9.8 * dt;
-        s.mesh.position.x += s.vx * dt;
-        s.mesh.position.y += s.vy * dt;
-        s.mesh.position.z += s.vz * dt;
-
-        if (s.mesh.position.y < 0.05) {
-          s.mesh.position.y = 0.05;
-          s.vy *= -0.42;
-          s.vx *= 0.72;
-          s.vz *= 0.72;
-        }
-
-        s.mesh.rotation.x += s.rx * dt;
-        s.mesh.rotation.y += s.ry * dt;
-        s.mesh.rotation.z += s.rz * dt;
-        s.mesh.material.opacity = Math.max(0, 1 - Math.pow(s.age / s.life, 2));
       }
 
       controls.update();
       renderer.render(scene, camera);
     }
 
-    syncBoardFromFEN();
-    animate();
+    syncBoardImmediate();
+    requestAnimationFrame(animate);
   </script>
 </body>
 </html>
