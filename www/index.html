@@ -28,9 +28,8 @@ jobs:
         run: |
           mkdir -p www/lib
 
-          FOUND_HTML=$(find . -maxdepth 3 -iname "*.html" ! -path "./node_modules/*" ! -path "./android/*" | head -n 1)
-          if [ -n "$FOUND_HTML" ] && [ "$FOUND_HTML" != "./www/index.html" ]; then
-            cp "$FOUND_HTML" www/index.html
+          if [ ! -f "www/index.html" ] && [ -f "index.html" ]; then
+            cp index.html www/index.html
           fi
 
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" -o www/lib/three.min.js
@@ -56,7 +55,6 @@ jobs:
 
           node -e '
             const fs = require("fs");
-            // 1. Lock Landscape in AndroidManifest.xml
             const manifestPath = "android/app/src/main/AndroidManifest.xml";
             let xml = fs.readFileSync(manifestPath, "utf8");
             xml = xml.replace(
@@ -65,7 +63,6 @@ jobs:
             );
             fs.writeFileSync(manifestPath, xml);
 
-            // 2. Force Fullscreen & Cutout support in all styles.xml themes
             const stylesPath = "android/app/src/main/res/values/styles.xml";
             if (fs.existsSync(stylesPath)) {
               const fullStyles = [
@@ -91,7 +88,6 @@ jobs:
               fs.writeFileSync(stylesPath, fullStyles);
             }
 
-            // 3. Inject Modern Android WindowInsetsControllerCompat + Immersive Sticky Fullscreen into MainActivity.java
             const javaPath = "android/app/src/main/java/com/yonagraphics/niguschess/MainActivity.java";
             if (fs.existsSync(javaPath)) {
               const javaCode = [
