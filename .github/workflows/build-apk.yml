@@ -28,9 +28,8 @@ jobs:
         run: |
           mkdir -p www/lib
 
-          FOUND_HTML=$(find . -maxdepth 3 -iname "*.html" ! -path "./node_modules/*" ! -path "./android/*" | head -n 1)
-          if [ -n "$FOUND_HTML" ] && [ "$FOUND_HTML" != "./www/index.html" ]; then
-            cp "$FOUND_HTML" www/index.html
+          if [ ! -f "www/index.html" ] && [ -f "index.html" ]; then
+            cp index.html www/index.html
           fi
 
           curl -sL "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" -o www/lib/three.min.js
@@ -46,7 +45,7 @@ jobs:
             fs.writeFileSync("www/index.html", html);
           '
 
-      - name: 5. Initialize Capacitor (Nigus App Name + Landscape Lock)
+      - name: 5. Initialize Capacitor (Nigus Name + Landscape + True Immersive Fullscreen)
         run: |
           echo '{"name":"nigus-chess","version":"1.0.0","private":true}' > package.json
           echo '{"appId":"com.yonagraphics.niguschess","appName":"ንጉስ Nigus","webDir":"www"}' > capacitor.config.json
@@ -63,6 +62,89 @@ jobs:
               "<activity$1android:name=\".MainActivity\" android:screenOrientation=\"sensorLandscape\""
             );
             fs.writeFileSync(manifestPath, xml);
+
+            const stylesPath = "android/app/src/main/res/values/styles.xml";
+            if (fs.existsSync(stylesPath)) {
+              const fullStyles = [
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+                "<resources>",
+                "    <style name=\"AppTheme\" parent=\"Theme.AppCompat.NoActionBar\">",
+                "        <item name=\"android:windowFullscreen\">true</item>",
+                "        <item name=\"android:windowContentOverlay\">@null</item>",
+                "        <item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>",
+                "    </style>",
+                "    <style name=\"AppTheme.NoActionBar\" parent=\"Theme.AppCompat.NoActionBar\">",
+                "        <item name=\"windowActionBar\">false</item>",
+                "        <item name=\"windowNoTitle\">true</item>",
+                "        <item name=\"android:windowFullscreen\">true</item>",
+                "        <item name=\"android:windowContentOverlay\">@null</item>",
+                "        <item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>",
+                "    </style>",
+                "    <style name=\"AppTheme.NoActionBarLaunch\" parent=\"AppTheme.NoActionBar\">",
+                "        <item name=\"android:background\">#1D1612</item>",
+                "    </style>",
+                "</resources>"
+              ].join("\n");
+              fs.writeFileSync(stylesPath, fullStyles);
+            }
+
+            const javaPath = "android/app/src/main/java/com/yonagraphics/niguschess/MainActivity.java";
+            if (fs.existsSync(javaPath)) {
+              const javaCode = [
+                "package com.yonagraphics.niguschess;",
+                "import android.os.Build;",
+                "import android.os.Bundle;",
+                "import android.view.View;",
+                "import android.view.Window;",
+                "import android.view.WindowManager;",
+                "import androidx.core.view.WindowCompat;",
+                "import androidx.core.view.WindowInsetsCompat;",
+                "import androidx.core.view.WindowInsetsControllerCompat;",
+                "import com.getcapacitor.BridgeActivity;",
+                "public class MainActivity extends BridgeActivity {",
+                "  @Override",
+                "  public void onCreate(Bundle savedInstanceState) {",
+                "    super.onCreate(savedInstanceState);",
+                "    Window window = getWindow();",
+                "    window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);",
+                "    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {",
+                "      WindowManager.LayoutParams lp = window.getAttributes();",
+                "      lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;",
+                "      window.setAttributes(lp);",
+                "    }",
+                "    hideSystemUI();",
+                "  }",
+                "  @Override",
+                "  public void onResume() {",
+                "    super.onResume();",
+                "    hideSystemUI();",
+                "  }",
+                "  @Override",
+                "  public void onWindowFocusChanged(boolean hasFocus) {",
+                "    super.onWindowFocusChanged(hasFocus);",
+                "    if (hasFocus) hideSystemUI();",
+                "  }",
+                "  private void hideSystemUI() {",
+                "    Window window = getWindow();",
+                "    View decorView = window.getDecorView();",
+                "    WindowCompat.setDecorFitsSystemWindows(window, false);",
+                "    WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decorView);",
+                "    if (controller != null) {",
+                "      controller.hide(WindowInsetsCompat.Type.systemBars());",
+                "      controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);",
+                "    }",
+                "    decorView.setSystemUiVisibility(",
+                "      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_STABLE",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN",
+                "      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION",
+                "      | View.SYSTEM_UI_FLAG_FULLSCREEN);",
+                "  }",
+                "}"
+              ].join("\n");
+              fs.writeFileSync(javaPath, javaCode);
+            }
           '
 
       - name: 6. Generate Custom Nigus Crown & Yona Graphics Icon
