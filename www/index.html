@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>ንጉስ • Nigus Ethiopian Royal Chess</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -10,7 +13,7 @@
   <style>
     :root {
       --bg: #1D1612;
-      --surface: rgba(34, 26, 22, 0.90);
+      --surface: rgba(34, 26, 22, 0.92);
       --gold: #D4AF37;
       --gold-bright: #FFE082;
       --gold-deep: #9A7B1C;
@@ -20,7 +23,7 @@
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
+      margin: 0; padding: 0; width: 100vw; height: 100vh;
       overflow: hidden;
       background: radial-gradient(circle at 50% 35%, #2E221B 0%, #1D1612 70%, #140F0C 100%);
       color: var(--text);
@@ -80,22 +83,22 @@
       background: radial-gradient(circle at center, rgba(36, 26, 20, 0.5) 0%, rgba(18, 13, 10, 0.9) 100%);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       transition: opacity 0.4s ease, visibility 0.4s ease;
-      padding: 12px;
+      padding: 10px;
     }
     #main-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     .menu-card {
       position: relative;
-      width: min(720px, 95vw);
-      max-height: 94vh;
+      width: min(740px, 96vw);
+      max-height: 95vh;
       background: linear-gradient(160deg, rgba(40, 30, 24, 0.96) 0%, rgba(22, 16, 13, 0.98) 100%);
       border: 1.5px solid var(--gold);
-      border-radius: 24px;
-      padding: 18px 24px;
+      border-radius: 22px;
+      padding: 16px 22px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 28px rgba(212, 175, 55, 0.12);
       display: grid;
-      grid-template-columns: 1fr 1.08fr;
-      gap: 20px;
+      grid-template-columns: 1fr 1.12fr;
+      gap: 18px;
       align-items: center;
       overflow-y: auto;
     }
@@ -108,36 +111,43 @@
     .menu-hero {
       display: flex; flex-direction: column; align-items: flex-start; text-align: left;
       border-right: 1px solid rgba(212, 175, 55, 0.22);
-      padding-right: 18px;
+      padding-right: 16px;
     }
     .royal-badge {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 10px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+      font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
       color: var(--gold-bright); background: rgba(212, 175, 55, 0.15);
       border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 999px;
-      padding: 4px 11px; margin-bottom: 6px;
+      padding: 3px 10px; margin-bottom: 4px;
     }
     .geez-title {
-      font-size: clamp(34px, 5.5vw, 48px); font-weight: 900; line-height: 1;
+      font-size: clamp(32px, 5vw, 46px); font-weight: 900; line-height: 1;
       margin: 0;
       background: linear-gradient(180deg, #FFF6D6 0%, #FFD54F 45%, #B8860B 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
     }
     .eng-title {
-      font-size: clamp(14px, 2.2vw, 18px); font-weight: 800; letter-spacing: 4px;
-      color: var(--text); margin: 3px 0 6px 0;
+      font-size: clamp(13px, 2vw, 17px); font-weight: 800; letter-spacing: 4px;
+      color: var(--text); margin: 2px 0 6px 0;
     }
-    .menu-sub {
-      font-size: 11px; color: var(--muted); line-height: 1.4; margin: 0 0 10px 0;
+
+    /* Logged-in Player Profile Pill */
+    .user-profile-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 10px;
+      padding: 5px 10px; margin-bottom: 8px; font-size: 11px;
     }
+    .user-profile-name { font-weight: 800; color: var(--gold-bright); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-logout-btn { background: none; border: none; color: #EF5350; font-size: 10px; font-weight: 700; cursor: pointer; }
 
     /* Player Record Stats Badge inside Menu */
     .stats-badge {
       display: flex; align-items: center; justify-content: space-around;
       background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.3);
-      border-radius: 12px; padding: 6px 10px; width: 100%; margin-bottom: 10px;
-      font-size: 11px; font-weight: 700; color: var(--gold-bright);
+      border-radius: 12px; padding: 6px 10px; width: 100%; margin-bottom: 8px;
+      font-size: 10.5px; font-weight: 700; color: var(--gold-bright);
     }
     .stat-item span { display: block; font-size: 13px; font-weight: 900; text-align: center; }
 
@@ -145,28 +155,28 @@
       display: flex; align-items: center; gap: 10px;
       background: rgba(0, 0, 0, 0.42);
       border: 1px solid rgba(212, 175, 55, 0.35);
-      border-radius: 13px; padding: 6px 10px; width: 100%;
+      border-radius: 12px; padding: 6px 10px; width: 100%;
     }
     .yona-logo-box {
-      width: 34px; height: 34px; border-radius: 8px;
+      width: 32px; height: 32px; border-radius: 8px;
       background: #050507; border: 1px solid rgba(255,255,255,0.25);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
     }
     .yona-text { display: flex; flex-direction: column; }
-    .yona-dev-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-    .yona-dev-name { font-size: 12px; font-weight: 800; color: var(--gold-bright); letter-spacing: 0.4px; }
+    .yona-dev-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .yona-dev-name { font-size: 11.5px; font-weight: 800; color: var(--gold-bright); letter-spacing: 0.4px; }
 
-    .menu-actions { display: flex; flex-direction: column; gap: 7px; }
+    .menu-actions { display: flex; flex-direction: column; gap: 6px; }
     .side-picker-label {
-      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.4px;
+      font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.3px;
       color: var(--gold-bright); margin-bottom: -2px;
     }
-    .side-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .side-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
     .side-option {
       appearance: none; border: 1.5px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.04); color: var(--muted);
-      padding: 7px 10px; border-radius: 11px; font-size: 11px; font-weight: 700;
+      padding: 6px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: all 0.2s ease;
     }
@@ -182,8 +192,8 @@
       appearance: none; width: 100%;
       border: 1px solid rgba(212, 175, 55, 0.35);
       background: rgba(255, 255, 255, 0.05);
-      color: var(--text); padding: 8px 12px; border-radius: 12px;
-      font-size: 12px; font-weight: 700; cursor: pointer;
+      color: var(--text); padding: 7px 11px; border-radius: 11px;
+      font-size: 11.5px; font-weight: 700; cursor: pointer;
       display: flex; align-items: center; justify-content: space-between;
       transition: all 0.2s ease;
     }
@@ -191,72 +201,104 @@
       background: linear-gradient(135deg, #D4AF37 0%, #9A7B1C 100%);
       color: #120D0A; border-color: #FFE082;
       box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
-      font-size: 13px;
+      font-size: 12.5px;
     }
-    .menu-btn.social-google { background: #DB4437; border-color: #ff6d5e; color: #fff; }
-    .menu-btn.social-fb { background: #4267B2; border-color: #5b82d4; color: #fff; }
+    .menu-btn.social-google { background: #DB4437; border-color: #ff6d5e; color: #fff; justify-content: center; gap: 6px; }
+    .menu-btn.social-fb { background: #1877F2; border-color: #5b9bd5; color: #fff; justify-content: center; gap: 6px; }
     .menu-btn:active { transform: scale(0.98); }
-    .menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .menu-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 
-    /* --- LOGIN & LEADERBOARD MODALS --- */
+    /* --- MODALS (ABOUT / HISTORY, LEADERBOARD, SOCIAL SIGN-IN) --- */
     .modal-overlay {
       position: fixed; inset: 0; z-index: 120;
-      background: rgba(10, 8, 7, 0.88); backdrop-filter: blur(12px);
+      background: rgba(10, 8, 7, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       display: flex; align-items: center; justify-content: center;
-      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+      opacity: 0; visibility: hidden; pointer-events: none; transition: all 0.28s ease;
+      padding: 12px;
     }
-    .modal-overlay.visible { opacity: 1; visibility: visible; }
+    .modal-overlay.visible { opacity: 1; visibility: visible; pointer-events: auto; }
     .modal-box {
-      width: min(420px, 92vw); background: #221A15; border: 1.5px solid var(--gold);
-      border-radius: 20px; padding: 22px; box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-      position: relative; max-height: 85vh; display: flex; flex-direction: column;
+      width: min(560px, 94vw); background: linear-gradient(160deg, #281E18 0%, #17110E 100%);
+      border: 1.5px solid var(--gold);
+      border-radius: 20px; padding: 18px 20px; box-shadow: 0 18px 50px rgba(0,0,0,0.9);
+      position: relative; max-height: 88vh; display: flex; flex-direction: column;
     }
-    .modal-title { font-size: 18px; font-weight: 900; color: var(--gold-bright); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .leaderboard-list { overflow-y: auto; flex-grow: 1; margin-top: 8px; max-height: 50vh; }
-    .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 700; }
-    .lb-row:nth-child(1) { color: #FFE082; background: rgba(212,175,55,0.12); border-radius: 8px; }
+    .modal-title {
+      font-size: 16px; font-weight: 900; color: var(--gold-bright);
+      margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.25); padding-bottom: 8px;
+    }
+    .modal-close {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text); border-radius: 50%; width: 28px; height: 28px;
+      font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-scroll {
+      overflow-y: auto; flex-grow: 1; padding-right: 4px;
+      touch-action: pan-y; -webkit-overflow-scrolling: touch;
+    }
 
-    /* --- PIECE LORE INSPECTOR CARD --- */
-    #piece-info-card {
-      position: fixed;
-      left: max(14px, env(safe-area-inset-left));
-      top: 50%;
-      transform: translateY(-50%) translateX(-16px);
-      z-index: 15;
-      width: min(255px, 44vw);
-      background: var(--surface);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(212, 175, 55, 0.45);
-      border-radius: 18px;
-      padding: 12px 14px;
-      box-shadow: 0 12px 34px rgba(0,0,0,0.7);
-      opacity: 0; visibility: hidden; pointer-events: none;
-      transition: all 0.25s ease;
+    /* About & Royal History Styling */
+    .history-section {
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 12px;
     }
-    #piece-info-card.visible {
-      opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
-      pointer-events: auto;
+    .history-section h3 {
+      margin: 0 0 6px 0; font-size: 13.5px; color: var(--gold-bright); letter-spacing: 0.4px;
     }
-    .lore-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .lore-dynasty { font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold-bright); }
-    .lore-close { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 0 2px; }
-    .lore-geez { font-size: 19px; font-weight: 900; color: var(--gold-bright); line-height: 1.1; }
-    .lore-title { font-size: 12.5px; font-weight: 800; color: var(--text); margin-bottom: 5px; }
-    .lore-desc { font-size: 11px; color: var(--muted); line-height: 1.38; margin: 0; }
+    .history-section p {
+      margin: 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+    }
+    .piece-lore-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
+    }
+    .piece-lore-item {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(212,175,55,0.22);
+      border-radius: 12px; padding: 9px 11px;
+    }
+    .piece-lore-item .geez { font-size: 15px; font-weight: 900; color: var(--gold-bright); }
+    .piece-lore-item .role { font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+    .piece-lore-item .desc { font-size: 10.5px; color: var(--muted); line-height: 1.38; margin: 0; }
+
+    /* Leaderboard Styling */
+    .lb-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px; font-weight: 700;
+    }
+    .lb-row.me {
+      background: rgba(212, 175, 55, 0.22); border: 1px solid var(--gold-bright);
+      border-radius: 10px; color: var(--gold-bright); margin-bottom: 6px;
+    }
+
+    /* Social Login Form Modal */
+    .auth-input {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.5);
+      color: var(--text); font-size: 13px; margin-bottom: 10px; outline: none;
+      user-select: text; -webkit-user-select: text; touch-action: auto;
+    }
+    .auth-quick-chip {
+      background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.35);
+      color: var(--gold-bright); padding: 6px 10px; border-radius: 8px;
+      font-size: 11px; font-weight: 700; cursor: pointer; width: 100%;
+      text-align: left; margin-bottom: 8px; display: flex; justify-content: space-between;
+    }
 
     /* --- SINGLE-LEVEL TOP & BOTTOM HUD --- */
     .hud-bar {
       position: fixed; left: 50%; transform: translateX(-50%);
-      z-index: 10; display: flex; align-items: center; gap: 8px;
+      z-index: 10; display: flex; align-items: center; gap: 7px;
       background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 999px;
       padding: 5px 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.65);
       max-width: 96vw; white-space: nowrap;
     }
-    .top-hud { top: max(8px, env(safe-area-inset-top)); justify-content: space-between; width: min(640px, 95vw); }
-    .bottom-hud { bottom: max(8px, env(safe-area-inset-bottom)); gap: 6px; }
+    .top-hud { top: max(6px, env(safe-area-inset-top)); justify-content: space-between; width: min(680px, 96vw); }
+    .bottom-hud { bottom: max(6px, env(safe-area-inset-bottom)); gap: 6px; }
 
-    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand { display: flex; align-items: center; gap: 7px; }
     .crown-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-bright); }
     .brand-title { font-weight: 800; font-size: 13px; letter-spacing: 0.6px; color: var(--gold-bright); }
     .turn-pill {
@@ -267,13 +309,13 @@
     .btn {
       appearance: none; border: 1px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.07); color: var(--text);
-      padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      padding: 6px 11px; border-radius: 999px; font-size: 11px; font-weight: 700;
       cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
     }
     .btn.active { background: rgba(212, 175, 55, 0.25); border-color: var(--gold); color: var(--gold-bright); }
     #toast {
-      position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
-      z-index: 20; background: rgba(26, 19, 15, 0.95); color: var(--gold-bright);
+      position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+      z-index: 150; background: rgba(26, 19, 15, 0.95); color: var(--gold-bright);
       border: 1px solid var(--gold); border-radius: 999px; padding: 5px 16px;
       font-size: 12px; font-weight: 700; pointer-events: none; opacity: 0;
       transition: opacity 0.25s ease;
@@ -281,17 +323,16 @@
     #toast.show { opacity: 1; }
 
     @media (max-width: 600px) and (orientation: portrait) {
-      .menu-card { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
+      .menu-card { grid-template-columns: 1fr; padding: 14px; gap: 10px; }
       .menu-hero { border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.22); padding-right: 0; padding-bottom: 10px; }
-      #piece-info-card { top: auto; bottom: 64px; left: 50%; transform: translateX(-50%); width: 90vw; }
-      #piece-info-card.visible { transform: translateX(-50%); }
+      .piece-lore-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
 
-  <!-- CINEMATIC OPENING INTRO -->
+  <!-- 1. CINEMATIC OPENING INTRO -->
   <div id="intro-splash" onclick="dismissSplash()">
     <div class="splash-tibeb"></div>
     <div class="splash-logo-wrap">
@@ -308,14 +349,19 @@
     <div class="splash-dev">✨ Developed by Yona Graphics</div>
   </div>
 
-  <!-- ETHIOPIAN ROYAL FAMILY MAIN MENU -->
+  <!-- 2. ETHIOPIAN ROYAL FAMILY MAIN MENU -->
   <div id="main-menu">
     <div class="menu-card">
       <div class="menu-hero">
         <div class="royal-badge">👑 Imperial Aksumite Edition</div>
         <h1 class="geez-title">ንጉስ</h1>
         <div class="eng-title">NIGUS CHESS</div>
-        <p class="menu-sub">3D Ethiopian Royal Wizard's Chess. Command the Ivory Marble &amp; Gold Dynasty or Volcanic Obsidian.</p>
+
+        <!-- Logged-In Account Status Bar -->
+        <div class="user-profile-bar" id="user-profile-bar">
+          <span class="user-profile-name" id="user-display-name">👤 Guest Royal Commander</span>
+          <button class="user-logout-btn" id="btn-logout" onclick="logoutAccount()" style="display:none;">Sign Out</button>
+        </div>
 
         <!-- Player Battle Stats Tracker Badge -->
         <div class="stats-badge">
@@ -326,7 +372,7 @@
 
         <div class="yona-brand">
           <div class="yona-logo-box">
-            <svg viewBox="0 0 100 100" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 100 100" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
               <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
               <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#050507"/>
@@ -362,19 +408,28 @@
           <span>👥 2-Player Pass &amp; Play</span>
           <span>▶</span>
         </button>
-        <div class="menu-row">
+
+        <div class="menu-row-3">
           <button class="menu-btn" id="menu-diff" onclick="cycleDifficulty()">
-            <span>🧠 AI:</span>
-            <span id="diff-label" style="color:var(--gold-bright)">Ras (Med)</span>
+            <span>🧠 <span id="diff-label" style="color:var(--gold-bright)">Ras</span></span>
+          </button>
+          <button class="menu-btn" onclick="openAboutModal()">
+            <span>📜 History</span>
           </button>
           <button class="menu-btn" onclick="openLeaderboard()">
             <span>🏆 Top 50</span>
           </button>
         </div>
-        <div class="menu-row">
-          <button class="menu-btn social-google" onclick="socialLogin('Google')">🌐 Sign in with Gmail</button>
-          <button class="menu-btn social-fb" onclick="socialLogin('Facebook')">📘 Sign in with FB</button>
+
+        <div class="menu-row" id="social-login-row">
+          <button class="menu-btn social-google" id="btn-google-login" onclick="openSocialModal('Gmail')">
+            <span>🌐 Gmail Login</span>
+          </button>
+          <button class="menu-btn social-fb" id="btn-fb-login" onclick="openSocialModal('Facebook')">
+            <span>📘 FB Login</span>
+          </button>
         </div>
+
         <button class="menu-btn" id="btn-resume" onclick="closeMenu()" style="display:none; border-color:rgba(255,255,255,0.28);">
           <span>🛡️ Resume Current Battle</span>
           <span>↵</span>
@@ -383,44 +438,120 @@
     </div>
   </div>
 
-  <!-- TOP 50 LEADERBOARD MODAL -->
+  <!-- 3. ABOUT & ETHIOPIAN ROYAL HISTORY MODAL -->
+  <div class="modal-overlay" id="about-modal">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>📜 History of Ethiopia &amp; Royal Chess Pieces</span>
+        <button class="modal-close" onclick="closeAboutModal()">✕</button>
+      </div>
+      <div class="modal-scroll">
+        <div class="history-section">
+          <h3>🏛️ The Aksumite Empire &amp; Senterej (ሰንጠረዥ)</h3>
+          <p>
+            For over a millennium, Ethiopian Emperors, Queens, and Ras commanders played <strong>Senterej (ሰንጠረዥ)</strong>—Ethiopia's ancient royal strategy game passed down from the Kingdom of Aksum through the rock-hewn courts of Lalibela and the castles of Gondar. In Ethiopian court tradition, chess was taught to young royalty as an art of diplomacy, cavalry formation, and imperial defense.
+          </p>
+        </div>
+
+        <div class="history-section">
+          <h3>⚔️ Ivory Marble vs. Volcanic Obsidian</h3>
+          <p>
+            <strong>Nigus (ንጉስ)</strong> reimagines this imperial heritage in 3D Wizard's Chess. The <strong>Ivory Marble &amp; Brushed Gold Dynasty</strong> draws inspiration from the carved limestone palaces and golden crowns of Aksum, while the <strong>Volcanic Obsidian &amp; Ember Empire</strong> reflects the basalt highlands and Rift Valley lava shields of Ethiopia.
+          </p>
+        </div>
+
+        <div class="history-section" style="margin-bottom:4px;">
+          <h3>👑 The 6 Ethiopian Royal Chess Pieces</h3>
+          <div class="piece-lore-grid">
+            <div class="piece-lore-item">
+              <div class="geez">ንጉሠ ነገሥት</div>
+              <div class="role">Niguse Negest • The King</div>
+              <p class="desc">Emperor of Ethiopia wearing the tiered octagonal golden crown topped with the sacred Lalibela Cross. The heart of the empire.</p>
+            </div>
+            <div class="piece-lore-item">
+              <div class="geez">እቴጌ</div>
+              <div class="role">Itege • The Queen</div>
+              <p class="desc">Empress Consort crowned with the radiant solar halo tiara, honoring legendary leaders like Empress Taytu Betul and Queen Eleni.</p>
+            </div>
+            <div class="piece-lore-item">
+              <div class="geez">አቡነ</div>
+              <div class="role">Abuna • The Bishop</div>
+              <p class="desc">High Patriarch bearing the floating processional Lalibela Cross (መስቀል). Commands diagonal corridors with spiritual authority.</p>
+            </div>
+            <div class="piece-lore-item">
+              <div class="geez">ፈረሰኛ</div>
+              <div class="role">Feresegna • The Knight</div>
+              <p class="desc">Elite Ethiopian royal cavalry warhorse adorned with a golden crest mane. Leaps over fortifications in an L-formation.</p>
+            </div>
+            <div class="piece-lore-item">
+              <div class="geez">ሐውልት</div>
+              <div class="role">Hawilt Stele • The Rook</div>
+              <p class="desc">Monumental carved Aksumite obelisk featuring a false-door sanctuary base, storied window bands, and a rounded crown apex.</p>
+            </div>
+            <div class="piece-lore-item">
+              <div class="geez">ጋሻ ጃግሬ</div>
+              <div class="role">Gasha Jagre • The Pawn</div>
+              <p class="desc">Loyal Imperial Vanguard carrying the traditional conical Ethiopian Gasha shield (ጋሻ). Advances fearlessly to earn royal promotion.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. INTERACTIVE GMAIL / FACEBOOK ACCOUNT SIGN-IN MODAL -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-box" style="width: min(400px, 92vw);">
+      <div class="modal-title">
+        <span id="auth-modal-title">🌐 Sign in with Gmail</span>
+        <button class="modal-close" onclick="closeSocialModal()">✕</button>
+      </div>
+      <div class="modal-scroll">
+        <p style="font-size:11.5px; color:var(--muted); margin:0 0 10px 0;">
+          Link your account to sync your Win/Loss record and appear on the Global Top 50 Nigus Leaderboard.
+        </p>
+        <button class="auth-quick-chip" onclick="fillDemoAccount()">
+          <span>⚡ Quick Fill Saved Account</span>
+          <span>Tap ↵</span>
+        </button>
+        <input type="text" id="auth-name-input" class="auth-input" placeholder="Your Commander Name (e.g. Yonatan)" />
+        <input type="email" id="auth-email-input" class="auth-input" placeholder="Email or Account Handle" />
+        <button class="menu-btn primary" onclick="confirmSocialLogin()" style="justify-content:center;">
+          <span>✅ Connect Account &amp; Sync Stats</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. TOP 50 LEADERBOARD MODAL -->
   <div class="modal-overlay" id="lb-modal">
     <div class="modal-box">
       <div class="modal-title">
-        <span>🏆 Global Top 50 Winners</span>
-        <button class="lore-close" onclick="closeLeaderboard()" style="font-size:18px;">✕</button>
+        <span>🏆 Global Top 50 Royal Winners</span>
+        <button class="modal-close" onclick="closeLeaderboard()">✕</button>
       </div>
       <p style="font-size:11px; color:var(--muted); margin:0 0 8px 0;">Grandmasters recorded across online Aksumite arenas.</p>
-      <div class="leaderboard-list" id="lb-list-content">
-        <!-- Generated via JS -->
-      </div>
+      <div class="modal-scroll" id="lb-list-content"></div>
     </div>
   </div>
 
-  <!-- ETHIOPIAN ROYAL PIECE LORE INSPECTOR CARD -->
-  <div id="piece-info-card">
-    <div class="lore-header">
-      <span class="lore-dynasty" id="lore-dynasty">IVORY MARBLE DYNASTY • E1</span>
-      <button class="lore-close" onclick="hidePieceInfo()">✕</button>
-    </div>
-    <div class="lore-geez" id="lore-geez">ንጉሠ ነገሥት</div>
-    <div class="lore-title" id="lore-title">Niguse Negest (King)</div>
-    <p class="lore-desc" id="lore-desc">Emperor of Ethiopia bearing the tiered Imperial Crown and Lalibela Cross.</p>
-  </div>
-
-  <!-- TOP HUD -->
+  <!-- 6. TOP HUD -->
   <div class="hud-bar top-hud">
     <div class="brand">
       <button class="btn" onclick="openMenu()" style="padding:4px 10px;">☰ Menu</button>
+      <button class="btn" onclick="openAboutModal()" style="padding:4px 10px;">📜 About</button>
       <div class="crown-dot" id="turn-dot"></div>
       <span class="brand-title">ንጉስ • NIGUS</span>
     </div>
-    <div class="turn-pill" id="status-text">Marble's Turn (ንጉሥ)</div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <div class="turn-pill" id="status-text">Marble's Turn (ንጉሥ)</div>
+      <button class="btn" onclick="toggleFullscreen()" title="Fullscreen" style="padding:4px 9px;">⛶</button>
+    </div>
   </div>
 
   <div id="toast">⚔️ Royal Capture!</div>
 
-  <!-- BOTTOM HUD -->
+  <!-- 7. BOTTOM HUD -->
   <div class="hud-bar bottom-hud">
     <button class="btn active" id="btn-mode" onclick="toggleMode()">🤖 vs AI</button>
     <button class="btn" id="btn-cam" onclick="cycleCamera()">🎥 View: Marble</button>
@@ -430,28 +561,77 @@
   </div>
 
   <script>
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {});
-      }
-    } catch (e) {}
+    // --- FULLSCREEN & LANDSCAPE LOCK ---
+    function requestAppFullscreen() {
+      try {
+        const el = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    window.toggleFullscreen = function() {
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          requestAppFullscreen();
+          showToast('⛶ Fullscreen Mode Enabled');
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          showToast('⛶ Exited Fullscreen');
+        }
+      } catch (e) {}
+    };
 
     function dismissSplash() {
+      requestAppFullscreen();
       const sp = document.getElementById('intro-splash');
       if (sp) sp.classList.add('fade-out');
     }
-    setTimeout(dismissSplash, 2700);
+    setTimeout(() => {
+      const sp = document.getElementById('intro-splash');
+      if (sp) sp.classList.add('fade-out');
+    }, 2700);
 
-    // --- PLAYER BATTLE STATS STORAGE ---
+    // --- PLAYER BATTLE STATS & ACCOUNT STORAGE ---
     let playerStats = JSON.parse(localStorage.getItem('nigus_stats') || '{"wins":0, "losses":0, "draws":0}');
+    let userAccount = JSON.parse(localStorage.getItem('nigus_account') || 'null');
+    let currentAuthProvider = 'Gmail';
+
     function updateStatsDisplay() {
       document.getElementById('stat-wins').textContent = playerStats.wins;
       document.getElementById('stat-losses').textContent = playerStats.losses;
       document.getElementById('stat-draws').textContent = playerStats.draws;
     }
-    updateStatsDisplay();
 
-    function recordMatchResult(result) { // 'win', 'loss', 'draw'
+    function updateAccountDisplay() {
+      const nameEl = document.getElementById('user-display-name');
+      const logoutBtn = document.getElementById('btn-logout');
+      const gBtn = document.getElementById('btn-google-login');
+      const fBtn = document.getElementById('btn-fb-login');
+
+      if (userAccount && userAccount.name) {
+        const icon = userAccount.provider === 'Gmail' ? '🌐' : '📘';
+        nameEl.textContent = `${icon} ${userAccount.name} (${userAccount.provider})`;
+        logoutBtn.style.display = 'inline-block';
+        gBtn.innerHTML = userAccount.provider === 'Gmail' ? '<span>✅ Gmail Linked</span>' : '<span>🌐 Switch Gmail</span>';
+        fBtn.innerHTML = userAccount.provider === 'Facebook' ? '<span>✅ FB Linked</span>' : '<span>📘 Switch FB</span>';
+      } else {
+        nameEl.textContent = '👤 Guest Royal Commander';
+        logoutBtn.style.display = 'none';
+        gBtn.innerHTML = '<span>🌐 Gmail Login</span>';
+        fBtn.innerHTML = '<span>📘 FB Login</span>';
+      }
+    }
+    updateStatsDisplay();
+    updateAccountDisplay();
+
+    function recordMatchResult(result) {
       if (result === 'win') playerStats.wins++;
       else if (result === 'loss') playerStats.losses++;
       else if (result === 'draw') playerStats.draws++;
@@ -459,81 +639,93 @@
       updateStatsDisplay();
     }
 
-    // --- SOCIAL LOGIN & TOP 50 LEADERBOARD ---
-    window.socialLogin = function(provider) {
-      showToast(`🔐 Connected to ${provider} successfully!`);
-      const btn = event.currentTarget;
-      btn.textContent = `✅ Signed in (${provider})`;
-      btn.style.opacity = '0.8';
+    // --- INTERACTIVE GMAIL / FACEBOOK LOGIN FLOW ---
+    window.openSocialModal = function(provider) {
+      currentAuthProvider = provider;
+      const titleEl = document.getElementById('auth-modal-title');
+      titleEl.textContent = provider === 'Gmail' ? '🌐 Sign in with Google / Gmail' : '📘 Sign in with Facebook';
+      document.getElementById('auth-email-input').placeholder = provider === 'Gmail' ? 'yourname@gmail.com' : 'Facebook Email or Phone';
+      if (userAccount) {
+        document.getElementById('auth-name-input').value = userAccount.name || '';
+        document.getElementById('auth-email-input').value = userAccount.email || '';
+      }
+      document.getElementById('auth-modal').classList.add('visible');
     };
 
+    window.closeSocialModal = function() {
+      document.getElementById('auth-modal').classList.remove('visible');
+    };
+
+    window.fillDemoAccount = function() {
+      document.getElementById('auth-name-input').value = 'Ras Yonatan';
+      document.getElementById('auth-email-input').value = currentAuthProvider === 'Gmail' ? 'yonatansaol@gmail.com' : 'fb.com/yonagraphics';
+    };
+
+    window.confirmSocialLogin = function() {
+      const nameVal = document.getElementById('auth-name-input').value.trim() || 'Royal Commander';
+      const emailVal = document.getElementById('auth-email-input').value.trim() || (currentAuthProvider === 'Gmail' ? 'commander@gmail.com' : 'fb.com/commander');
+      userAccount = {
+        name: nameVal,
+        email: emailVal,
+        provider: currentAuthProvider
+      };
+      localStorage.setItem('nigus_account', JSON.stringify(userAccount));
+      updateAccountDisplay();
+      closeSocialModal();
+      showToast(`✅ Signed in as ${nameVal} via ${currentAuthProvider}!`);
+    };
+
+    window.logoutAccount = function() {
+      userAccount = null;
+      localStorage.removeItem('nigus_account');
+      updateAccountDisplay();
+      showToast('👋 Signed out of online profile');
+    };
+
+    // --- ABOUT & HISTORY MODAL ---
+    window.openAboutModal = function() {
+      document.getElementById('about-modal').classList.add('visible');
+    };
+    window.closeAboutModal = function() {
+      document.getElementById('about-modal').classList.remove('visible');
+    };
+
+    // --- GLOBAL TOP 50 LEADERBOARD (Includes Logged-In Player!) ---
     window.openLeaderboard = function() {
       const list = document.getElementById('lb-list-content');
-      list.innerHTML = '';
-      const sampleNames = ['Ras Tadesse (AA)', 'Dejazmach Yohannes', 'Lij Kassa', 'Emperor Haile', 'Fitawrari Bekele', 'Blaten Geta', 'Ras Mengistu', 'Dejazmach Balcha', 'Negus Amha', 'Lij Iyasu'];
-      let html = '';
-      for (let i = 1; i <= 50; i++) {
-        const name = i <= 10 ? sampleNames[i-1] : `Grandmaster_${i + 140}`;
-        const wins = 215 - (i * 3) + Math.floor(Math.random() * 3);
-        html += `<div class="lb-row"><span>#${i} ${name}</span><span style="color:var(--gold-bright)">👑 ${wins} Wins</span></div>`;
+      const baseCommanders = [
+        { name: 'Ras Tadesse (Addis Ababa)', wins: 242 },
+        { name: 'Dejazmach Yohannes (Gondar)', wins: 231 },
+        { name: 'Empress Taytu_II (Aksum)', wins: 219 },
+        { name: 'Fitawrari Bekele (Lalibela)', wins: 208 },
+        { name: 'Lij Kassa (Bahir Dar)', wins: 199 },
+        { name: 'Negus Amha (Harar)', wins: 190 },
+        { name: 'Dejazmach Balcha (Hawassa)', wins: 184 },
+        { name: 'Ras Alula (Mekelle)', wins: 178 },
+        { name: 'Blaten Geta Heruy (Jimma)', wins: 171 },
+        { name: 'Abuna Petros_IX (Debre Damo)', wins: 165 }
+      ];
+
+      for (let i = 11; i <= 50; i++) {
+        baseCommanders.push({
+          name: `Royal_Grandmaster_${100 + i}`,
+          wins: Math.max(12, 165 - (i - 10) * 3)
+        });
       }
+
+      const myName = userAccount ? `${userAccount.name} (${userAccount.provider})` : 'You (Guest Commander)';
+      let html = `<div class="lb-row me"><span>⭐ ${myName}</span><span>👑 ${playerStats.wins} Wins (${playerStats.losses}L / ${playerStats.draws}D)</span></div>`;
+
+      baseCommanders.forEach((c, idx) => {
+        html += `<div class="lb-row"><span>#${idx + 1} ${c.name}</span><span style="color:var(--gold-bright)">👑 ${c.wins} Wins</span></div>`;
+      });
+
       list.innerHTML = html;
       document.getElementById('lb-modal').classList.add('visible');
     };
 
     window.closeLeaderboard = function() {
       document.getElementById('lb-modal').classList.remove('visible');
-    };
-
-    // --- ETHIOPIAN ROYAL PIECE LORE ---
-    const ROYAL_LORE = {
-      k: {
-        geez: 'ንጉሠ ነገሥት',
-        title: 'Niguse Negest • King',
-        desc: 'Emperor of Ethiopia wearing the octagonal golden imperial crown topped with the sacred Lalibela cross. Protect him at all costs.'
-      },
-      q: {
-        geez: 'እቴጌ',
-        title: 'Itege • Queen',
-        desc: 'Empress Consort crowned with the radiant solar halo tiara. The most commanding and versatile force on the royal battlefield.'
-      },
-      b: {
-        geez: 'አቡነ',
-        title: 'Abuna • Bishop',
-        desc: 'High Patriarch bearing the floating processional Lalibela cross. Commands diagonal corridors with ancient blessing.'
-      },
-      n: {
-        geez: 'ፈረሰኛ',
-        title: 'Feresegna • Knight',
-        desc: 'Elite Ethiopian royal cavalry warhorse adorned with a golden crest mane. Leaps over fortifications in an L-formation.'
-      },
-      r: {
-        geez: 'ሐውልት',
-        title: 'Hawilt Stele • Rook',
-        desc: 'Monumental carved Aksumite obelisk featuring a false-door sanctuary base and rounded crown apex. Fortifies ranks and files.'
-      },
-      p: {
-        geez: 'ጋሻ ጃግሬ',
-        title: 'Gasha Jagre • Pawn',
-        desc: 'Loyal Imperial Vanguard carrying the traditional conical Ethiopian Gasha shield. Advances fearlessly to earn royal promotion.'
-      }
-    };
-
-    function showPieceInfo(piece, sq) {
-      const info = ROYAL_LORE[piece.type];
-      if (!info) return;
-      const dynastyName = piece.color === 'w' ? 'IVORY MARBLE DYNASTY' : 'OBSIDIAN EMBER EMPIRE';
-      const dynastyEl = document.getElementById('lore-dynasty');
-      dynastyEl.textContent = dynastyName + ' • ' + sq.toUpperCase();
-      dynastyEl.style.color = piece.color === 'w' ? '#FFE082' : '#FF7043';
-      document.getElementById('lore-geez').textContent = info.geez;
-      document.getElementById('lore-title').textContent = info.title;
-      document.getElementById('lore-desc').textContent = info.desc;
-      document.getElementById('piece-info-card').classList.add('visible');
-    }
-
-    window.hidePieceInfo = function() {
-      document.getElementById('piece-info-card').classList.remove('visible');
     };
 
     // --- SOUND SYNTHESIS ---
@@ -576,7 +768,7 @@
       } catch (e) {}
     }
 
-    // --- THREE.SCENE SETUP ---
+    // --- THREE.JS SCENE SETUP ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1D1612);
@@ -915,6 +1107,7 @@
       });
     }
 
+    // --- CLEAN BOARD TAP (NO POPUP ON PIECE TAP) ---
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -942,6 +1135,7 @@
     function handleBoardTap(clientX, clientY) {
       if (!document.getElementById('main-menu').classList.contains('hidden')) return;
       if (isAnimating || game.game_over()) return;
+      if (vsAI && game.turn() !== playerColor) return;
 
       pointer.x = (clientX / window.innerWidth) * 2 - 1;
       pointer.y = -(clientY / window.innerHeight) * 2 + 1;
@@ -960,13 +1154,11 @@
 
       if (!tappedSq) {
         selectSquare(null);
-        hidePieceInfo();
         return;
       }
 
       const chosenMove = legalMovesForSelected.find(m => m.to === tappedSq);
-      if (selectedSquare && chosenMove && (!vsAI || game.turn() === playerColor)) {
-        hidePieceInfo();
+      if (selectedSquare && chosenMove) {
         const moveResult = game.move({ from: selectedSquare, to: tappedSq, promotion: 'q' });
         selectedSquare = null;
         legalMovesForSelected = [];
@@ -980,23 +1172,11 @@
         return;
       }
 
-      // Tapping any piece always opens its Royal Lore info card
       const pieceOnSq = game.get(tappedSq);
-      if (pieceOnSq) {
-        showPieceInfo(pieceOnSq, tappedSq);
-        if (pieceOnSq.color === game.turn() && (!vsAI || game.turn() === playerColor)) {
-          selectSquare(tappedSq);
-        } else {
-          playSound('select');
-          clearHighlights();
-          selectedSquare = null;
-          legalMovesForSelected = [];
-          highlightMeshes[tappedSq].material.color.setHex(0xFF7043);
-          highlightMeshes[tappedSq].visible = true;
-        }
+      if (pieceOnSq && pieceOnSq.color === game.turn()) {
+        selectSquare(tappedSq);
       } else {
         selectSquare(null);
-        hidePieceInfo();
       }
     }
 
@@ -1064,6 +1244,7 @@
     }
 
     window.startMatch = function(aiMode) {
+      requestAppFullscreen();
       vsAI = aiMode;
       matchRecorded = false;
       const btn = document.getElementById('btn-mode');
@@ -1071,7 +1252,6 @@
       btn.classList.toggle('active', vsAI);
       game.reset();
       selectSquare(null);
-      hidePieceInfo();
       syncBoardImmediate();
       setCameraForPlayer();
       document.getElementById('btn-resume').style.display = 'flex';
@@ -1087,15 +1267,16 @@
 
     window.openMenu = function() { document.getElementById('main-menu').classList.remove('hidden'); };
     window.closeMenu = function() {
+      requestAppFullscreen();
       document.getElementById('main-menu').classList.add('hidden');
       setCameraForPlayer();
     };
     window.cycleDifficulty = function() {
       aiDifficulty = (aiDifficulty + 1) % 3;
-      const names = ['Dejazmach (Easy)', 'Ras (Med)', 'Nigus (Hard)'];
+      const names = ['Dejazmach', 'Ras', 'Nigus'];
       document.getElementById('diff-label').textContent = names[aiDifficulty];
+      showToast('🧠 AI Rank: ' + names[aiDifficulty]);
     };
-    window.toggleSound = function() { soundEnabled = !soundEnabled; document.getElementById('sfx-label').textContent = soundEnabled ? 'ON' : 'OFF'; };
     window.toggleMode = function() {
       vsAI = !vsAI;
       const btn = document.getElementById('btn-mode');
@@ -1120,13 +1301,13 @@
       if (isAnimating) return;
       game.undo();
       if (vsAI && game.turn() === getAIColor()) game.undo();
-      selectSquare(null); hidePieceInfo(); syncBoardImmediate();
+      selectSquare(null); syncBoardImmediate();
       showToast('↩️ Move Undone');
     };
     window.resetGame = function() {
       if (isAnimating) return;
       game.reset(); matchRecorded = false;
-      selectSquare(null); hidePieceInfo(); syncBoardImmediate(); setCameraForPlayer();
+      selectSquare(null); syncBoardImmediate(); setCameraForPlayer();
       showToast('🔄 New Match Started');
       if (vsAI && playerColor === 'b' && game.turn() === 'w') { setTimeout(makeAIMove, 500); }
     };
