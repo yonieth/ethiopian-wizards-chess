@@ -1,1374 +1,176 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>ንጉስ • Nigus Ethiopian Royal Chess</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <style>
-    :root {
-      --bg: #1D1612;
-      --surface: rgba(34, 26, 22, 0.92);
-      --gold: #D4AF37;
-      --gold-bright: #FFE082;
-      --gold-deep: #9A7B1C;
-      --ember: #FF5722;
-      --text: #F7F4EB;
-      --muted: #C8BCA8;
-    }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      margin: 0; padding: 0; width: 100vw; height: 100vh;
-      overflow: hidden;
-      background: radial-gradient(circle at 50% 35%, #2E221B 0%, #1D1612 70%, #140F0C 100%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      overscroll-behavior: none; touch-action: none; user-select: none; -webkit-user-select: none;
-    }
-    #canvas-container { position: fixed; inset: 0; z-index: 1; }
-
-    /* --- CINEMATIC OPENING INTRO --- */
-    #intro-splash {
-      position: fixed; inset: 0; z-index: 100;
-      background: radial-gradient(circle at center, #2B1F17 0%, #140E0B 100%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: opacity 0.85s ease, visibility 0.85s ease;
-    }
-    #intro-splash.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
-    .splash-tibeb {
-      position: absolute; top: 0; left: 0; right: 0; height: 6px;
-      background: repeating-linear-gradient(90deg, #1B8A3D 0px, #1B8A3D 28px, #FCD116 28px, #FCD116 56px, #D62828 56px, #D62828 84px, #D4AF37 84px, #D4AF37 112px);
-    }
-    .splash-logo-wrap {
-      width: 86px; height: 86px; border-radius: 22px;
-      background: #080605; border: 2px solid var(--gold);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 36px rgba(212, 175, 55, 0.45);
-      opacity: 0; transform: scale(0.6) translateY(15px);
-      animation: splashLogoIn 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
-    }
-    .splash-geez {
-      font-size: clamp(46px, 8vw, 68px); font-weight: 900; margin: 12px 0 0 0;
-      background: linear-gradient(180deg, #FFF8E1 0%, #FFD54F 50%, #B8860B 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 6px 20px rgba(212, 175, 55, 0.45));
-      opacity: 0; transform: translateY(18px);
-      animation: splashTextIn 0.9s ease 0.55s forwards;
-    }
-    .splash-eng {
-      font-size: 16px; font-weight: 800; letter-spacing: 6px; color: var(--text);
-      margin-top: 2px; opacity: 0; transform: translateY(12px);
-      animation: splashTextIn 0.8s ease 0.85s forwards;
-    }
-    .splash-dev {
-      margin-top: 18px; display: flex; align-items: center; gap: 8px;
-      padding: 6px 18px; border-radius: 999px;
-      background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.4);
-      font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
-      color: var(--gold-bright); opacity: 0; transform: translateY(10px);
-      animation: splashTextIn 0.8s ease 1.15s forwards;
-    }
-    @keyframes splashLogoIn { to { opacity: 1; transform: scale(1) translateY(0); } }
-    @keyframes splashTextIn { to { opacity: 1; transform: translateY(0); } }
-
-    /* --- MAIN MENU --- */
-    #main-menu {
-      position: fixed; inset: 0; z-index: 50;
-      display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(circle at center, rgba(36, 26, 20, 0.5) 0%, rgba(18, 13, 10, 0.9) 100%);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      transition: opacity 0.4s ease, visibility 0.4s ease;
-      padding: 10px;
-    }
-    #main-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
-    .menu-card {
-      position: relative;
-      width: min(740px, 96vw);
-      max-height: 95vh;
-      background: linear-gradient(160deg, rgba(40, 30, 24, 0.96) 0%, rgba(22, 16, 13, 0.98) 100%);
-      border: 1.5px solid var(--gold);
-      border-radius: 22px;
-      padding: 16px 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 28px rgba(212, 175, 55, 0.12);
-      display: grid;
-      grid-template-columns: 1fr 1.12fr;
-      gap: 18px;
-      align-items: center;
-      overflow-y: auto;
-    }
-    .menu-card::before {
-      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px;
-      background: repeating-linear-gradient(90deg, #1B8A3D 0px, #1B8A3D 24px, #FCD116 24px, #FCD116 48px, #D62828 48px, #D62828 72px, #D4AF37 72px, #D4AF37 96px);
-      opacity: 0.95;
-    }
-
-    .menu-hero {
-      display: flex; flex-direction: column; align-items: flex-start; text-align: left;
-      border-right: 1px solid rgba(212, 175, 55, 0.22);
-      padding-right: 16px;
-    }
-    .royal-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-      color: var(--gold-bright); background: rgba(212, 175, 55, 0.15);
-      border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 999px;
-      padding: 3px 10px; margin-bottom: 4px;
-    }
-    .geez-title {
-      font-size: clamp(32px, 5vw, 46px); font-weight: 900; line-height: 1;
-      margin: 0;
-      background: linear-gradient(180deg, #FFF6D6 0%, #FFD54F 45%, #B8860B 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
-    }
-    .eng-title {
-      font-size: clamp(13px, 2vw, 17px); font-weight: 800; letter-spacing: 4px;
-      color: var(--text); margin: 2px 0 6px 0;
-    }
-
-    /* Logged-in Player Profile Pill */
-    .user-profile-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      width: 100%; background: rgba(212, 175, 55, 0.12);
-      border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 10px;
-      padding: 5px 10px; margin-bottom: 8px; font-size: 11px;
-    }
-    .user-profile-name { font-weight: 800; color: var(--gold-bright); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .user-logout-btn { background: none; border: none; color: #EF5350; font-size: 10px; font-weight: 700; cursor: pointer; }
-
-    /* Player Record Stats Badge inside Menu */
-    .stats-badge {
-      display: flex; align-items: center; justify-content: space-around;
-      background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.3);
-      border-radius: 12px; padding: 6px 10px; width: 100%; margin-bottom: 8px;
-      font-size: 10.5px; font-weight: 700; color: var(--gold-bright);
-    }
-    .stat-item span { display: block; font-size: 13px; font-weight: 900; text-align: center; }
-
-    .yona-brand {
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(0, 0, 0, 0.42);
-      border: 1px solid rgba(212, 175, 55, 0.35);
-      border-radius: 12px; padding: 6px 10px; width: 100%;
-    }
-    .yona-logo-box {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: #050507; border: 1px solid rgba(255,255,255,0.25);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
-    }
-    .yona-text { display: flex; flex-direction: column; }
-    .yona-dev-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-    .yona-dev-name { font-size: 11.5px; font-weight: 800; color: var(--gold-bright); letter-spacing: 0.4px; }
-
-    .menu-actions { display: flex; flex-direction: column; gap: 6px; }
-    .side-picker-label {
-      font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.3px;
-      color: var(--gold-bright); margin-bottom: -2px;
-    }
-    .side-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-    .side-option {
-      appearance: none; border: 1.5px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.04); color: var(--muted);
-      padding: 6px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: all 0.2s ease;
-    }
-    .side-option.selected {
-      background: rgba(212, 175, 55, 0.22); border-color: var(--gold-bright); color: var(--text);
-      box-shadow: 0 0 14px rgba(212, 175, 55, 0.25);
-    }
-    .swatch-mini { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .swatch-mini.ivory { background: #FFF5E1; box-shadow: 0 0 6px #FFD54F; }
-    .swatch-mini.obsidian { background: #1A161F; border: 1.5px solid #FF5722; box-shadow: 0 0 6px #FF5722; }
-
-    .menu-btn {
-      appearance: none; width: 100%;
-      border: 1px solid rgba(212, 175, 55, 0.35);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text); padding: 7px 11px; border-radius: 11px;
-      font-size: 11.5px; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between;
-      transition: all 0.2s ease;
-    }
-    .menu-btn.primary {
-      background: linear-gradient(135deg, #D4AF37 0%, #9A7B1C 100%);
-      color: #120D0A; border-color: #FFE082;
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
-      font-size: 12.5px;
-    }
-    .menu-btn.social-google { background: #DB4437; border-color: #ff6d5e; color: #fff; justify-content: center; gap: 6px; }
-    .menu-btn.social-fb { background: #1877F2; border-color: #5b9bd5; color: #fff; justify-content: center; gap: 6px; }
-    .menu-btn:active { transform: scale(0.98); }
-    .menu-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-    .menu-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-
-    /* --- MODALS (ABOUT / HISTORY, LEADERBOARD, SOCIAL SIGN-IN) --- */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 120;
-      background: rgba(10, 8, 7, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; visibility: hidden; pointer-events: none; transition: all 0.28s ease;
-      padding: 12px;
-    }
-    .modal-overlay.visible { opacity: 1; visibility: visible; pointer-events: auto; }
-    .modal-box {
-      width: min(560px, 94vw); background: linear-gradient(160deg, #281E18 0%, #17110E 100%);
-      border: 1.5px solid var(--gold);
-      border-radius: 20px; padding: 18px 20px; box-shadow: 0 18px 50px rgba(0,0,0,0.9);
-      position: relative; max-height: 88vh; display: flex; flex-direction: column;
-    }
-    .modal-title {
-      font-size: 16px; font-weight: 900; color: var(--gold-bright);
-      margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid rgba(212, 175, 55, 0.25); padding-bottom: 8px;
-    }
-    .modal-close {
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
-      color: var(--text); border-radius: 50%; width: 28px; height: 28px;
-      font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-    .modal-scroll {
-      overflow-y: auto; flex-grow: 1; padding-right: 4px;
-      touch-action: pan-y; -webkit-overflow-scrolling: touch;
-    }
-
-    /* About & Royal History Styling */
-    .history-section {
-      background: rgba(0,0,0,0.35); border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 14px; padding: 12px 14px; margin-bottom: 12px;
-    }
-    .history-section h3 {
-      margin: 0 0 6px 0; font-size: 13.5px; color: var(--gold-bright); letter-spacing: 0.4px;
-    }
-    .history-section p {
-      margin: 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
-    }
-    .piece-lore-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
-    }
-    .piece-lore-item {
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(212,175,55,0.22);
-      border-radius: 12px; padding: 9px 11px;
-    }
-    .piece-lore-item .geez { font-size: 15px; font-weight: 900; color: var(--gold-bright); }
-    .piece-lore-item .role { font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-    .piece-lore-item .desc { font-size: 10.5px; color: var(--muted); line-height: 1.38; margin: 0; }
-
-    /* Leaderboard Styling */
-    .lb-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-size: 12px; font-weight: 700;
-    }
-    .lb-row.me {
-      background: rgba(212, 175, 55, 0.22); border: 1px solid var(--gold-bright);
-      border-radius: 10px; color: var(--gold-bright); margin-bottom: 6px;
-    }
-
-    /* Social Login Form Modal */
-    .auth-input {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.5);
-      color: var(--text); font-size: 13px; margin-bottom: 10px; outline: none;
-      user-select: text; -webkit-user-select: text; touch-action: auto;
-    }
-    .auth-quick-chip {
-      background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.35);
-      color: var(--gold-bright); padding: 6px 10px; border-radius: 8px;
-      font-size: 11px; font-weight: 700; cursor: pointer; width: 100%;
-      text-align: left; margin-bottom: 8px; display: flex; justify-content: space-between;
-    }
-
-    /* --- SINGLE-LEVEL TOP & BOTTOM HUD --- */
-    .hud-bar {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      z-index: 10; display: flex; align-items: center; gap: 7px;
-      background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 999px;
-      padding: 5px 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.65);
-      max-width: 96vw; white-space: nowrap;
-    }
-    .top-hud { top: max(6px, env(safe-area-inset-top)); justify-content: space-between; width: min(680px, 96vw); }
-    .bottom-hud { bottom: max(6px, env(safe-area-inset-bottom)); gap: 6px; }
-
-    .brand { display: flex; align-items: center; gap: 7px; }
-    .crown-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-bright); }
-    .brand-title { font-weight: 800; font-size: 13px; letter-spacing: 0.6px; color: var(--gold-bright); }
-    .turn-pill {
-      font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
-      background: rgba(212, 175, 55, 0.16); border: 1px solid rgba(212, 175, 55, 0.4);
-      color: var(--text);
-    }
-    .btn {
-      appearance: none; border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.07); color: var(--text);
-      padding: 6px 11px; border-radius: 999px; font-size: 11px; font-weight: 700;
-      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-    }
-    .btn.active { background: rgba(212, 175, 55, 0.25); border-color: var(--gold); color: var(--gold-bright); }
-    #toast {
-      position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
-      z-index: 150; background: rgba(26, 19, 15, 0.95); color: var(--gold-bright);
-      border: 1px solid var(--gold); border-radius: 999px; padding: 5px 16px;
-      font-size: 12px; font-weight: 700; pointer-events: none; opacity: 0;
-      transition: opacity 0.25s ease;
-    }
-    #toast.show { opacity: 1; }
-
-    @media (max-width: 600px) and (orientation: portrait) {
-      .menu-card { grid-template-columns: 1fr; padding: 14px; gap: 10px; }
-      .menu-hero { border-right: none; border-bottom: 1px solid rgba(212, 175, 55, 0.22); padding-right: 0; padding-bottom: 10px; }
-      .piece-lore-grid { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div id="canvas-container"></div>
-
-  <!-- 1. CINEMATIC OPENING INTRO -->
-  <div id="intro-splash" onclick="dismissSplash()">
-    <div class="splash-tibeb"></div>
-    <div class="splash-logo-wrap">
-      <svg viewBox="0 0 100 100" width="54" height="54" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
-        <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
-        <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#080605"/>
-        <path d="M 37 56 L 37 64 L 34 69 L 46 93 L 58 69 L 53 63" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <line x1="46" y1="67" x2="46" y2="91" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <h1 class="splash-geez">ንጉስ</h1>
-    <div class="splash-eng">NIGUS ROYAL CHESS</div>
-    <div class="splash-dev">✨ Developed by Yona Graphics</div>
-  </div>
-
-  <!-- 2. ETHIOPIAN ROYAL FAMILY MAIN MENU -->
-  <div id="main-menu">
-    <div class="menu-card">
-      <div class="menu-hero">
-        <div class="royal-badge">👑 Imperial Aksumite Edition</div>
-        <h1 class="geez-title">ንጉስ</h1>
-        <div class="eng-title">NIGUS CHESS</div>
-
-        <!-- Logged-In Account Status Bar -->
-        <div class="user-profile-bar" id="user-profile-bar">
-          <span class="user-profile-name" id="user-display-name">👤 Guest Royal Commander</span>
-          <button class="user-logout-btn" id="btn-logout" onclick="logoutAccount()" style="display:none;">Sign Out</button>
-        </div>
-
-        <!-- Player Battle Stats Tracker Badge -->
-        <div class="stats-badge">
-          <div class="stat-item">Wins <span id="stat-wins" style="color:#66BB6A">0</span></div>
-          <div class="stat-item">Losses <span id="stat-losses" style="color:#EF5350">0</span></div>
-          <div class="stat-item">Draws <span id="stat-draws" style="color:#FFD54F">0</span></div>
-        </div>
-
-        <div class="yona-brand">
-          <div class="yona-logo-box">
-            <svg viewBox="0 0 100 100" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M 65 28 A 23 23 0 1 0 38 56 C 48 59 56 64 58 68" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" fill="none"/>
-              <path d="M 35 37 A 14 14 0 0 0 64 41" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" fill="none"/>
-              <polygon points="60,21 78,26 67,31 69,39" stroke="#FFFFFF" stroke-width="4.2" stroke-linejoin="round" fill="#050507"/>
-              <path d="M 37 56 L 37 64 L 34 69 L 46 93 L 58 69 L 53 63" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <line x1="46" y1="67" x2="46" y2="91" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="yona-text">
-            <span class="yona-dev-label">Designed &amp; Developed By</span>
-            <span class="yona-dev-name">YONA GRAPHICS</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="menu-actions">
-        <div class="side-picker-label">Choose Your Royal Dynasty:</div>
-        <div class="side-picker">
-          <button class="side-option selected" id="pick-white" onclick="selectPlayerColor('w')">
-            <span class="swatch-mini ivory"></span>
-            <span>Ivory Marble</span>
-          </button>
-          <button class="side-option" id="pick-black" onclick="selectPlayerColor('b')">
-            <span class="swatch-mini obsidian"></span>
-            <span>Obsidian Ember</span>
-          </button>
-        </div>
-
-        <button class="menu-btn primary" onclick="startMatch(true)">
-          <span>⚔️ New Game (vs Royal AI)</span>
-          <span>▶</span>
-        </button>
-        <button class="menu-btn" onclick="startMatch(false)">
-          <span>👥 2-Player Pass &amp; Play</span>
-          <span>▶</span>
-        </button>
-
-        <div class="menu-row-3">
-          <button class="menu-btn" id="menu-diff" onclick="cycleDifficulty()">
-            <span>🧠 <span id="diff-label" style="color:var(--gold-bright)">Ras</span></span>
-          </button>
-          <button class="menu-btn" onclick="openAboutModal()">
-            <span>📜 History</span>
-          </button>
-          <button class="menu-btn" onclick="openLeaderboard()">
-            <span>🏆 Top 50</span>
-          </button>
-        </div>
-
-        <div class="menu-row" id="social-login-row">
-          <button class="menu-btn social-google" id="btn-google-login" onclick="openSocialModal('Gmail')">
-            <span>🌐 Gmail Login</span>
-          </button>
-          <button class="menu-btn social-fb" id="btn-fb-login" onclick="openSocialModal('Facebook')">
-            <span>📘 FB Login</span>
-          </button>
-        </div>
-
-        <button class="menu-btn" id="btn-resume" onclick="closeMenu()" style="display:none; border-color:rgba(255,255,255,0.28);">
-          <span>🛡️ Resume Current Battle</span>
-          <span>↵</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. ABOUT & ETHIOPIAN ROYAL HISTORY MODAL -->
-  <div class="modal-overlay" id="about-modal">
-    <div class="modal-box">
-      <div class="modal-title">
-        <span>📜 History of Ethiopia &amp; Royal Chess Pieces</span>
-        <button class="modal-close" onclick="closeAboutModal()">✕</button>
-      </div>
-      <div class="modal-scroll">
-        <div class="history-section">
-          <h3>🏛️ The Aksumite Empire &amp; Senterej (ሰንጠረዥ)</h3>
-          <p>
-            For over a millennium, Ethiopian Emperors, Queens, and Ras commanders played <strong>Senterej (ሰንጠረዥ)</strong>—Ethiopia's ancient royal strategy game passed down from the Kingdom of Aksum through the rock-hewn courts of Lalibela and the castles of Gondar. In Ethiopian court tradition, chess was taught to young royalty as an art of diplomacy, cavalry formation, and imperial defense.
-          </p>
-        </div>
-
-        <div class="history-section">
-          <h3>⚔️ Ivory Marble vs. Volcanic Obsidian</h3>
-          <p>
-            <strong>Nigus (ንጉስ)</strong> reimagines this imperial heritage in 3D Wizard's Chess. The <strong>Ivory Marble &amp; Brushed Gold Dynasty</strong> draws inspiration from the carved limestone palaces and golden crowns of Aksum, while the <strong>Volcanic Obsidian &amp; Ember Empire</strong> reflects the basalt highlands and Rift Valley lava shields of Ethiopia.
-          </p>
-        </div>
-
-        <div class="history-section" style="margin-bottom:4px;">
-          <h3>👑 The 6 Ethiopian Royal Chess Pieces</h3>
-          <div class="piece-lore-grid">
-            <div class="piece-lore-item">
-              <div class="geez">ንጉሠ ነገሥት</div>
-              <div class="role">Niguse Negest • The King</div>
-              <p class="desc">Emperor of Ethiopia wearing the tiered octagonal golden crown topped with the sacred Lalibela Cross. The heart of the empire.</p>
-            </div>
-            <div class="piece-lore-item">
-              <div class="geez">እቴጌ</div>
-              <div class="role">Itege • The Queen</div>
-              <p class="desc">Empress Consort crowned with the radiant solar halo tiara, honoring legendary leaders like Empress Taytu Betul and Queen Eleni.</p>
-            </div>
-            <div class="piece-lore-item">
-              <div class="geez">አቡነ</div>
-              <div class="role">Abuna • The Bishop</div>
-              <p class="desc">High Patriarch bearing the floating processional Lalibela Cross (መስቀል). Commands diagonal corridors with spiritual authority.</p>
-            </div>
-            <div class="piece-lore-item">
-              <div class="geez">ፈረሰኛ</div>
-              <div class="role">Feresegna • The Knight</div>
-              <p class="desc">Elite Ethiopian royal cavalry warhorse adorned with a golden crest mane. Leaps over fortifications in an L-formation.</p>
-            </div>
-            <div class="piece-lore-item">
-              <div class="geez">ሐውልት</div>
-              <div class="role">Hawilt Stele • The Rook</div>
-              <p class="desc">Monumental carved Aksumite obelisk featuring a false-door sanctuary base, storied window bands, and a rounded crown apex.</p>
-            </div>
-            <div class="piece-lore-item">
-              <div class="geez">ጋሻ ጃግሬ</div>
-              <div class="role">Gasha Jagre • The Pawn</div>
-              <p class="desc">Loyal Imperial Vanguard carrying the traditional conical Ethiopian Gasha shield (ጋሻ). Advances fearlessly to earn royal promotion.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. INTERACTIVE GMAIL / FACEBOOK ACCOUNT SIGN-IN MODAL -->
-  <div class="modal-overlay" id="auth-modal">
-    <div class="modal-box" style="width: min(400px, 92vw);">
-      <div class="modal-title">
-        <span id="auth-modal-title">🌐 Sign in with Gmail</span>
-        <button class="modal-close" onclick="closeSocialModal()">✕</button>
-      </div>
-      <div class="modal-scroll">
-        <p style="font-size:11.5px; color:var(--muted); margin:0 0 10px 0;">
-          Link your account to sync your Win/Loss record and appear on the Global Top 50 Nigus Leaderboard.
-        </p>
-        <button class="auth-quick-chip" onclick="fillDemoAccount()">
-          <span>⚡ Quick Fill Saved Account</span>
-          <span>Tap ↵</span>
-        </button>
-        <input type="text" id="auth-name-input" class="auth-input" placeholder="Your Commander Name (e.g. Yonatan)" />
-        <input type="email" id="auth-email-input" class="auth-input" placeholder="Email or Account Handle" />
-        <button class="menu-btn primary" onclick="confirmSocialLogin()" style="justify-content:center;">
-          <span>✅ Connect Account &amp; Sync Stats</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. TOP 50 LEADERBOARD MODAL -->
-  <div class="modal-overlay" id="lb-modal">
-    <div class="modal-box">
-      <div class="modal-title">
-        <span>🏆 Global Top 50 Royal Winners</span>
-        <button class="modal-close" onclick="closeLeaderboard()">✕</button>
-      </div>
-      <p style="font-size:11px; color:var(--muted); margin:0 0 8px 0;">Grandmasters recorded across online Aksumite arenas.</p>
-      <div class="modal-scroll" id="lb-list-content"></div>
-    </div>
-  </div>
-
-  <!-- 6. TOP HUD -->
-  <div class="hud-bar top-hud">
-    <div class="brand">
-      <button class="btn" onclick="openMenu()" style="padding:4px 10px;">☰ Menu</button>
-      <button class="btn" onclick="openAboutModal()" style="padding:4px 10px;">📜 About</button>
-      <div class="crown-dot" id="turn-dot"></div>
-      <span class="brand-title">ንጉስ • NIGUS</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:6px;">
-      <div class="turn-pill" id="status-text">Marble's Turn (ንጉሥ)</div>
-      <button class="btn" onclick="toggleFullscreen()" title="Fullscreen" style="padding:4px 9px;">⛶</button>
-    </div>
-  </div>
-
-  <div id="toast">⚔️ Royal Capture!</div>
-
-  <!-- 7. BOTTOM HUD -->
-  <div class="hud-bar bottom-hud">
-    <button class="btn active" id="btn-mode" onclick="toggleMode()">🤖 vs AI</button>
-    <button class="btn" id="btn-cam" onclick="cycleCamera()">🎥 View: Marble</button>
-    <button class="btn active" id="btn-fx" onclick="toggleActionCam()">⚡ Action Cam</button>
-    <button class="btn" onclick="undoMove()">↩️ Undo</button>
-    <button class="btn" onclick="resetGame()">🔄 Restart</button>
-  </div>
-
-  <script>
-    // --- FULLSCREEN & LANDSCAPE LOCK ---
-    function requestAppFullscreen() {
-      try {
-        const el = document.documentElement;
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-        }
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
-        }
-      } catch (e) {}
-    }
-
-    window.toggleFullscreen = function() {
-      try {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          requestAppFullscreen();
-          showToast('⛶ Fullscreen Mode Enabled');
-        } else {
-          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-          showToast('⛶ Exited Fullscreen');
-        }
-      } catch (e) {}
-    };
-
-    function dismissSplash() {
-      requestAppFullscreen();
-      const sp = document.getElementById('intro-splash');
-      if (sp) sp.classList.add('fade-out');
-    }
-    setTimeout(() => {
-      const sp = document.getElementById('intro-splash');
-      if (sp) sp.classList.add('fade-out');
-    }, 2700);
-
-    // --- PLAYER BATTLE STATS & ACCOUNT STORAGE ---
-    let playerStats = JSON.parse(localStorage.getItem('nigus_stats') || '{"wins":0, "losses":0, "draws":0}');
-    let userAccount = JSON.parse(localStorage.getItem('nigus_account') || 'null');
-    let currentAuthProvider = 'Gmail';
-
-    function updateStatsDisplay() {
-      document.getElementById('stat-wins').textContent = playerStats.wins;
-      document.getElementById('stat-losses').textContent = playerStats.losses;
-      document.getElementById('stat-draws').textContent = playerStats.draws;
-    }
-
-    function updateAccountDisplay() {
-      const nameEl = document.getElementById('user-display-name');
-      const logoutBtn = document.getElementById('btn-logout');
-      const gBtn = document.getElementById('btn-google-login');
-      const fBtn = document.getElementById('btn-fb-login');
-
-      if (userAccount && userAccount.name) {
-        const icon = userAccount.provider === 'Gmail' ? '🌐' : '📘';
-        nameEl.textContent = `${icon} ${userAccount.name} (${userAccount.provider})`;
-        logoutBtn.style.display = 'inline-block';
-        gBtn.innerHTML = userAccount.provider === 'Gmail' ? '<span>✅ Gmail Linked</span>' : '<span>🌐 Switch Gmail</span>';
-        fBtn.innerHTML = userAccount.provider === 'Facebook' ? '<span>✅ FB Linked</span>' : '<span>📘 Switch FB</span>';
-      } else {
-        nameEl.textContent = '👤 Guest Royal Commander';
-        logoutBtn.style.display = 'none';
-        gBtn.innerHTML = '<span>🌐 Gmail Login</span>';
-        fBtn.innerHTML = '<span>📘 FB Login</span>';
-      }
-    }
-    updateStatsDisplay();
-    updateAccountDisplay();
-
-    function recordMatchResult(result) {
-      if (result === 'win') playerStats.wins++;
-      else if (result === 'loss') playerStats.losses++;
-      else if (result === 'draw') playerStats.draws++;
-      localStorage.setItem('nigus_stats', JSON.stringify(playerStats));
-      updateStatsDisplay();
-    }
-
-    // --- INTERACTIVE GMAIL / FACEBOOK LOGIN FLOW ---
-    window.openSocialModal = function(provider) {
-      currentAuthProvider = provider;
-      const titleEl = document.getElementById('auth-modal-title');
-      titleEl.textContent = provider === 'Gmail' ? '🌐 Sign in with Google / Gmail' : '📘 Sign in with Facebook';
-      document.getElementById('auth-email-input').placeholder = provider === 'Gmail' ? 'yourname@gmail.com' : 'Facebook Email or Phone';
-      if (userAccount) {
-        document.getElementById('auth-name-input').value = userAccount.name || '';
-        document.getElementById('auth-email-input').value = userAccount.email || '';
-      }
-      document.getElementById('auth-modal').classList.add('visible');
-    };
-
-    window.closeSocialModal = function() {
-      document.getElementById('auth-modal').classList.remove('visible');
-    };
-
-    window.fillDemoAccount = function() {
-      document.getElementById('auth-name-input').value = 'Ras Yonatan';
-      document.getElementById('auth-email-input').value = currentAuthProvider === 'Gmail' ? 'yonatansaol@gmail.com' : 'fb.com/yonagraphics';
-    };
-
-    window.confirmSocialLogin = function() {
-      const nameVal = document.getElementById('auth-name-input').value.trim() || 'Royal Commander';
-      const emailVal = document.getElementById('auth-email-input').value.trim() || (currentAuthProvider === 'Gmail' ? 'commander@gmail.com' : 'fb.com/commander');
-      userAccount = {
-        name: nameVal,
-        email: emailVal,
-        provider: currentAuthProvider
-      };
-      localStorage.setItem('nigus_account', JSON.stringify(userAccount));
-      updateAccountDisplay();
-      closeSocialModal();
-      showToast(`✅ Signed in as ${nameVal} via ${currentAuthProvider}!`);
-    };
-
-    window.logoutAccount = function() {
-      userAccount = null;
-      localStorage.removeItem('nigus_account');
-      updateAccountDisplay();
-      showToast('👋 Signed out of online profile');
-    };
-
-    // --- ABOUT & HISTORY MODAL ---
-    window.openAboutModal = function() {
-      document.getElementById('about-modal').classList.add('visible');
-    };
-    window.closeAboutModal = function() {
-      document.getElementById('about-modal').classList.remove('visible');
-    };
-
-    // --- GLOBAL TOP 50 LEADERBOARD (Includes Logged-In Player!) ---
-    window.openLeaderboard = function() {
-      const list = document.getElementById('lb-list-content');
-      const baseCommanders = [
-        { name: 'Ras Tadesse (Addis Ababa)', wins: 242 },
-        { name: 'Dejazmach Yohannes (Gondar)', wins: 231 },
-        { name: 'Empress Taytu_II (Aksum)', wins: 219 },
-        { name: 'Fitawrari Bekele (Lalibela)', wins: 208 },
-        { name: 'Lij Kassa (Bahir Dar)', wins: 199 },
-        { name: 'Negus Amha (Harar)', wins: 190 },
-        { name: 'Dejazmach Balcha (Hawassa)', wins: 184 },
-        { name: 'Ras Alula (Mekelle)', wins: 178 },
-        { name: 'Blaten Geta Heruy (Jimma)', wins: 171 },
-        { name: 'Abuna Petros_IX (Debre Damo)', wins: 165 }
-      ];
-
-      for (let i = 11; i <= 50; i++) {
-        baseCommanders.push({
-          name: `Royal_Grandmaster_${100 + i}`,
-          wins: Math.max(12, 165 - (i - 10) * 3)
-        });
-      }
-
-      const myName = userAccount ? `${userAccount.name} (${userAccount.provider})` : 'You (Guest Commander)';
-      let html = `<div class="lb-row me"><span>⭐ ${myName}</span><span>👑 ${playerStats.wins} Wins (${playerStats.losses}L / ${playerStats.draws}D)</span></div>`;
-
-      baseCommanders.forEach((c, idx) => {
-        html += `<div class="lb-row"><span>#${idx + 1} ${c.name}</span><span style="color:var(--gold-bright)">👑 ${c.wins} Wins</span></div>`;
-      });
-
-      list.innerHTML = html;
-      document.getElementById('lb-modal').classList.add('visible');
-    };
-
-    window.closeLeaderboard = function() {
-      document.getElementById('lb-modal').classList.remove('visible');
-    };
-
-    // --- SOUND SYNTHESIS ---
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-    let soundEnabled = true;
-
-    function playSound(type) {
-      if (!soundEnabled) return;
-      try {
-        if (!audioCtx) audioCtx = new AudioCtx();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        if (type === 'select') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(540, now);
-          osc.frequency.exponentialRampToValueAtTime(820, now + 0.08);
-          gain.gain.setValueAtTime(0.11, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-          osc.start(now); osc.stop(now + 0.09);
-        } else if (type === 'move') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(190, now);
-          osc.frequency.exponentialRampToValueAtTime(92, now + 0.16);
-          gain.gain.setValueAtTime(0.22, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
-          osc.start(now); osc.stop(now + 0.17);
-        } else if (type === 'shatter') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(150, now);
-          osc.frequency.exponentialRampToValueAtTime(34, now + 0.45);
-          gain.gain.setValueAtTime(0.35, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
-          osc.start(now); osc.stop(now + 0.46);
-        }
-      } catch (e) {}
-    }
-
-    // --- THREE.JS SCENE SETUP ---
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1D1612);
-    scene.fog = new THREE.FogExp2(0x1D1612, 0.020);
-
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.25, 100);
-    camera.position.set(0, 8.2, 9.4);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.22;
-    container.appendChild(renderer.domElement);
-
-    const ControlsClass = THREE.OrbitControls || window.OrbitControls;
-    const controls = new ControlsClass(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.maxPolarAngle = Math.PI / 2.18;
-    controls.minDistance = 6.2;
-    controls.maxDistance = 16.5;
-    controls.target.set(0, 0.3, 0);
-
-    scene.add(new THREE.HemisphereLight(0xFFF5DE, 0x38281E, 0.88));
-
-    const sunLight = new THREE.DirectionalLight(0xFFF0C8, 1.6);
-    sunLight.position.set(7, 15, 9);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
-    sunLight.shadow.bias = -0.0005;
-    scene.add(sunLight);
-
-    const goldRim = new THREE.PointLight(0xFFD54F, 1.25, 24);
-    goldRim.position.set(6, 5, 6);
-    scene.add(goldRim);
-
-    const emberRim = new THREE.PointLight(0xFF6D3A, 1.35, 24);
-    emberRim.position.set(-6, 5, -6);
-    scene.add(emberRim);
-
-    const matMarble = new THREE.MeshStandardMaterial({ color: 0xF7F2E7, roughness: 0.18, metalness: 0.06 });
-    const matGold = new THREE.MeshStandardMaterial({ color: 0xE5B83B, roughness: 0.22, metalness: 0.88, emissive: 0x4A3200, emissiveIntensity: 0.28 });
-    const matObsidian = new THREE.MeshStandardMaterial({ color: 0x1A1622, roughness: 0.14, metalness: 0.55 });
-    const matEmber = new THREE.MeshStandardMaterial({ color: 0xFF5722, roughness: 0.25, metalness: 0.35, emissive: 0xFF3D00, emissiveIntensity: 0.85 });
-
-    const matSqLight = new THREE.MeshStandardMaterial({ color: 0xEDE4D0, roughness: 0.28, metalness: 0.08 });
-    const matSqDark = new THREE.MeshStandardMaterial({ color: 0x261E1A, roughness: 0.22, metalness: 0.25 });
-    const matPlinth = new THREE.MeshStandardMaterial({ color: 0x2D211A, roughness: 0.35, metalness: 0.45 });
-
-    const boardGroup = new THREE.Group();
-    scene.add(boardGroup);
-
-    const squareMeshes = {};
-    const highlightMeshes = {};
-
-    const plinth1 = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.32, 9.4), matPlinth);
-    plinth1.position.y = -0.30; plinth1.receiveShadow = true; boardGroup.add(plinth1);
-
-    const plinthGold = new THREE.Mesh(new THREE.BoxGeometry(8.52, 0.24, 8.52), matGold);
-    plinthGold.position.y = -0.14; boardGroup.add(plinthGold);
-
-    const files = ['a','b','c','d','e','f','g','h'];
-    for (let r = 0; r < 8; r++) {
-      for (let f = 0; f < 8; f++) {
-        const sqName = files[f] + (8 - r);
-        const isLight = (r + f) % 2 === 0;
-        const sq = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.14, 0.98), isLight ? matSqLight : matSqDark);
-        sq.position.set(f - 3.5, 0, r - 3.5);
-        sq.receiveShadow = true;
-        sq.userData = { square: sqName };
-        boardGroup.add(sq);
-        squareMeshes[sqName] = sq;
-
-        const hlGeo = new THREE.RingGeometry(0.28, 0.41, 28);
-        hlGeo.rotateX(-Math.PI / 2);
-        const hlMat = new THREE.MeshBasicMaterial({ color: 0xFFD54F, side: THREE.DoubleSide, transparent: true, opacity: 0.9, polygonOffset: true, polygonOffsetFactor: -2 });
-        const hl = new THREE.Mesh(hlGeo, hlMat);
-        hl.position.set(f - 3.5, 0.082, r - 3.5);
-        hl.visible = false;
-        boardGroup.add(hl);
-        highlightMeshes[sqName] = hl;
-      }
-    }
-
-    function createEthiopianPiece(type, color) {
-      const group = new THREE.Group();
-      const primaryMat = color === 'w' ? matMarble : matObsidian;
-      const accentMat = color === 'w' ? matGold : matEmber;
-      const dir = color === 'w' ? -1 : 1;
-
-      const baseBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.10, 24), primaryMat);
-      baseBottom.position.y = 0.05; baseBottom.castShadow = true; group.add(baseBottom);
-
-      const baseGoldRing = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.37, 0.05, 24), accentMat);
-      baseGoldRing.position.y = 0.125; group.add(baseGoldRing);
-
-      const baseTop = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.34, 0.08, 24), primaryMat);
-      baseTop.position.y = 0.19; group.add(baseTop);
-
-      const floatGroup = new THREE.Group();
-      const spinGroup = new THREE.Group();
-      floatGroup.add(spinGroup);
-      group.add(floatGroup);
-
-      if (type === 'p') {
-        const tunic = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.26, 0.46, 20), primaryMat);
-        tunic.position.y = 0.45; tunic.castShadow = true; group.add(tunic);
-        const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 10, 20), accentMat);
-        collar.rotation.x = Math.PI / 2; collar.position.y = 0.67; group.add(collar);
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 20, 20), primaryMat);
-        head.position.y = 0.82; group.add(head);
-        const headband = new THREE.Mesh(new THREE.TorusGeometry(0.146, 0.018, 8, 20), accentMat);
-        headband.rotation.x = Math.PI / 2; headband.position.y = 0.85; group.add(headband);
-        const shield = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.09, 20), accentMat);
-        shield.rotation.x = dir * (Math.PI / 2);
-        shield.position.set(0, 0.52, dir * 0.23);
-        floatGroup.add(shield);
-      } else if (type === 'r') {
-        const steleBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.38), primaryMat);
-        steleBase.position.y = 0.29; group.add(steleBase);
-        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.78, 0.28), primaryMat);
-        pillar.position.y = 0.75; pillar.castShadow = true; group.add(pillar);
-        for (let i = 0; i < 3; i++) {
-          const band = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.04, 0.30), accentMat);
-          band.position.y = 0.62 + i * 0.18; group.add(band);
-        }
-        const falseDoor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.31), accentMat);
-        falseDoor.position.y = 0.42; group.add(falseDoor);
-        const apex = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.24, 24), accentMat);
-        apex.rotation.x = Math.PI / 2; apex.position.y = 1.16; group.add(apex);
-      } else if (type === 'n') {
-        const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.28, 0.34, 20), primaryMat);
-        pedestal.position.y = 0.39; group.add(pedestal);
-        const chest = new THREE.Mesh(new THREE.SphereGeometry(0.21, 18, 18), primaryMat);
-        chest.position.set(0, 0.62, dir * 0.04); group.add(chest);
-        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 0.44, 16), primaryMat);
-        neck.position.set(0, 0.86, dir * 0.06); neck.rotation.x = dir * 0.28; neck.castShadow = true; group.add(neck);
-        const head = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 16), primaryMat);
-        head.rotation.x = dir * (Math.PI / 2.3); head.position.set(0, 1.02, dir * 0.20); group.add(head);
-        const mane = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.12), accentMat);
-        mane.position.set(0, 0.88, -dir * 0.08); mane.rotation.x = dir * 0.25; floatGroup.add(mane);
-      } else if (type === 'b') {
-        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.29, 0.78, 24), primaryMat);
-        robe.position.y = 0.61; robe.castShadow = true; group.add(robe);
-        const sash = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.025, 10, 24), accentMat);
-        sash.rotation.x = Math.PI / 2; sash.position.y = 0.72; group.add(sash);
-        const mitre = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 20), primaryMat);
-        mitre.position.y = 1.14; group.add(mitre);
-        const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.30, 0.06), accentMat);
-        const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.06), accentMat);
-        vBar.position.y = 1.44; hBar.position.y = 1.47;
-        spinGroup.add(vBar); spinGroup.add(hBar);
-      } else if (type === 'q') {
-        const gown = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.31, 0.92, 24), primaryMat);
-        gown.position.y = 0.68; gown.castShadow = true; group.add(gown);
-        const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.12, 20), accentMat);
-        collar.position.y = 1.16; group.add(collar);
-        const tiara = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.18, 12), accentMat);
-        tiara.position.y = 1.30; group.add(tiara);
-        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 12, 28), accentMat);
-        halo.position.y = 1.58; spinGroup.add(halo);
-      } else if (type === 'k') {
-        const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.33, 1.02, 24), primaryMat);
-        robe.position.y = 0.73; robe.castShadow = true; group.add(robe);
-        const capeRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 12, 24), accentMat);
-        capeRing.rotation.x = Math.PI / 2; capeRing.position.y = 1.18; group.add(capeRing);
-        const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.21, 0.24, 8), accentMat);
-        crownBase.position.y = 1.34; group.add(crownBase);
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 20), primaryMat);
-        dome.position.y = 1.48; group.add(dome);
-        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.34, 0.075), accentMat);
-        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.075, 0.075), accentMat);
-        crossV.position.y = 1.80; crossH.position.y = 1.84;
-        spinGroup.add(crossV); spinGroup.add(crossH);
-      }
-
-      group.userData = { type, color, floatGroup, spinGroup, phase: Math.random() * Math.PI * 2 };
-      return group;
-    }
-
-    const game = new Chess();
-    const pieceMeshes = {};
-    let selectedSquare = null;
-    let legalMovesForSelected = [];
-    let vsAI = true;
-    let playerColor = 'w';
-    let aiDifficulty = 1;
-    let actionCamEnabled = true;
-    let isAnimating = false;
-    let camPreset = 0;
-    let matchRecorded = false;
-
-    window.selectPlayerColor = function(color) {
-      playerColor = color;
-      document.getElementById('pick-white').classList.toggle('selected', color === 'w');
-      document.getElementById('pick-black').classList.toggle('selected', color === 'b');
-      playSound('select');
-    };
-
-    function getAIColor() { return playerColor === 'w' ? 'b' : 'w'; }
-
-    function setCameraForPlayer() {
-      if (playerColor === 'b') {
-        camera.position.set(0, 8.2, -9.4);
-        camPreset = 1;
-        document.getElementById('btn-cam').textContent = '🎥 View: Obsidian';
-      } else {
-        camera.position.set(0, 8.2, 9.4);
-        camPreset = 0;
-        document.getElementById('btn-cam').textContent = '🎥 View: Marble';
-      }
-      controls.target.set(0, 0.3, 0);
-    }
-
-    function squareToWorld(sq) {
-      const f = files.indexOf(sq[0]);
-      const r = 8 - parseInt(sq[1], 10);
-      return new THREE.Vector3(f - 3.5, 0.07, r - 3.5);
-    }
-
-    function syncBoardImmediate() {
-      Object.values(pieceMeshes).forEach(m => boardGroup.remove(m));
-      for (const k in pieceMeshes) delete pieceMeshes[k];
-
-      const board = game.board();
-      for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-          const p = board[r][f];
-          if (p) {
-            const sq = files[f] + (8 - r);
-            const mesh = createEthiopianPiece(p.type, p.color);
-            mesh.position.copy(squareToWorld(sq));
-            mesh.userData.square = sq;
-            boardGroup.add(mesh);
-            pieceMeshes[sq] = mesh;
-          }
-        }
-      }
-      updateHUD();
-    }
-
-    const activeShards = [];
-    function spawnShatter(worldPos, color) {
-      playSound('shatter');
-      const mat = color === 'w' ? matMarble : matObsidian;
-      const accent = color === 'w' ? matGold : matEmber;
-      for (let i = 0; i < 34; i++) {
-        const size = 0.06 + Math.random() * 0.10;
-        const shard = new THREE.Mesh(new THREE.DodecahedronGeometry(size, 0), i % 3 === 0 ? accent : mat);
-        shard.position.copy(worldPos).add(new THREE.Vector3(0, 0.35 + Math.random() * 0.5, 0));
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 1.5 + Math.random() * 3.5;
-        shard.userData = {
-          vel: new THREE.Vector3(Math.cos(angle) * speed, 2.2 + Math.random() * 3.0, Math.sin(angle) * speed),
-          rot: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8),
-          life: 1.0
-        };
-        scene.add(shard);
-        activeShards.push(shard);
-      }
-    }
-
-    const activeAnimations = [];
-    function executeAnimatedMove(moveObj, onComplete) {
-      isAnimating = true;
-      clearHighlights();
-
-      const fromSq = moveObj.from;
-      const toSq = moveObj.to;
-      const attacker = pieceMeshes[fromSq];
-      const defender = pieceMeshes[toSq];
-
-      const startPos = squareToWorld(fromSq);
-      const endPos = squareToWorld(toSq);
-      const savedCamPos = camera.position.clone();
-      const savedTarget = controls.target.clone();
-
-      if (defender && actionCamEnabled) {
-        showToast('⚔️ Royal Strike on ' + toSq.toUpperCase() + '!');
-        const mid = startPos.clone().lerp(endPos, 0.65);
-        camera.position.set(mid.x + 2.8, 3.8, mid.z + 2.8);
-        controls.target.copy(endPos);
-      } else {
-        playSound('move');
-      }
-
-      const duration = defender ? 0.82 : 0.40;
-      activeAnimations.push({
-        elapsed: 0,
-        duration,
-        shattered: false,
-        update(dt) {
-          this.elapsed += dt;
-          const t = Math.min(this.elapsed / this.duration, 1);
-
-          if (attacker) {
-            if (!defender) {
-              attacker.position.lerpVectors(startPos, endPos, t);
-              attacker.position.y = 0.07 + Math.sin(t * Math.PI) * 0.42;
-            } else {
-              if (t < 0.65) {
-                const subT = t / 0.65;
-                attacker.position.lerpVectors(startPos, endPos, subT * 0.82);
-                attacker.position.y = 0.07 + Math.sin(subT * Math.PI) * 0.62;
-              } else {
-                const subT = (t - 0.65) / 0.35;
-                attacker.position.lerpVectors(startPos.clone().lerp(endPos, 0.82), endPos, subT);
-                attacker.position.y = 0.07;
-                if (!this.shattered) {
-                  this.shattered = true;
-                  boardGroup.remove(defender);
-                  spawnShatter(endPos, defender.userData.color);
-                }
-              }
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 3. Set up Java JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 4. Bundle Offline Three.js & Chess.js
+        run: |
+          mkdir -p www/lib
+
+          FOUND_HTML=$(find . -maxdepth 3 -iname "*.html" ! -path "./node_modules/*" ! -path "./android/*" | head -n 1)
+          if [ -n "$FOUND_HTML" ] && [ "$FOUND_HTML" != "./www/index.html" ]; then
+            cp "$FOUND_HTML" www/index.html
+          fi
+
+          curl -sL "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" -o www/lib/three.min.js
+          curl -sL "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" -o www/lib/OrbitControls.js
+          curl -sL "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" -o www/lib/chess.min.js
+
+          node -e '
+            const fs = require("fs");
+            let html = fs.readFileSync("www/index.html", "utf8");
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/[^"'\'']*\/three\.min\.js/g, "./lib/three.min.js");
+            html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^"'\'']*\/examples\/js\/controls\/OrbitControls\.js/g, "./lib/OrbitControls.js");
+            html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/chess\.js\/[^"'\'']*\/chess\.min\.js/g, "./lib/chess.min.js");
+            fs.writeFileSync("www/index.html", html);
+          '
+
+      - name: 5. Initialize Capacitor (Nigus Name + Landscape + True Immersive Fullscreen)
+        run: |
+          echo '{"name":"nigus-chess","version":"1.0.0","private":true}' > package.json
+          echo '{"appId":"com.yonagraphics.niguschess","appName":"ንጉስ Nigus","webDir":"www"}' > capacitor.config.json
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/assets
+          npx cap add android
+          npx cap sync android
+
+          node -e '
+            const fs = require("fs");
+            // 1. Lock Landscape in AndroidManifest.xml
+            const manifestPath = "android/app/src/main/AndroidManifest.xml";
+            let xml = fs.readFileSync(manifestPath, "utf8");
+            xml = xml.replace(
+              /<activity([^>]*?)android:name="\.MainActivity"/,
+              "<activity$1android:name=\".MainActivity\" android:screenOrientation=\"sensorLandscape\""
+            );
+            fs.writeFileSync(manifestPath, xml);
+
+            // 2. Force Fullscreen & Cutout support in all styles.xml themes
+            const stylesPath = "android/app/src/main/res/values/styles.xml";
+            if (fs.existsSync(stylesPath)) {
+              const fullStyles = [
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+                "<resources>",
+                "    <style name=\"AppTheme\" parent=\"Theme.AppCompat.NoActionBar\">",
+                "        <item name=\"android:windowFullscreen\">true</item>",
+                "        <item name=\"android:windowContentOverlay\">@null</item>",
+                "        <item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>",
+                "    </style>",
+                "    <style name=\"AppTheme.NoActionBar\" parent=\"Theme.AppCompat.NoActionBar\">",
+                "        <item name=\"windowActionBar\">false</item>",
+                "        <item name=\"windowNoTitle\">true</item>",
+                "        <item name=\"android:windowFullscreen\">true</item>",
+                "        <item name=\"android:windowContentOverlay\">@null</item>",
+                "        <item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>",
+                "    </style>",
+                "    <style name=\"AppTheme.NoActionBarLaunch\" parent=\"AppTheme.NoActionBar\">",
+                "        <item name=\"android:background\">#1D1612</item>",
+                "    </style>",
+                "</resources>"
+              ].join("\n");
+              fs.writeFileSync(stylesPath, fullStyles);
             }
-          }
 
-          if (t >= 1) {
-            if (defender && actionCamEnabled) {
-              setTimeout(() => {
-                camera.position.copy(savedCamPos);
-                controls.target.copy(savedTarget);
-              }, 360);
+            // 3. Inject Modern Android WindowInsetsControllerCompat + Immersive Sticky Fullscreen into MainActivity.java
+            const javaPath = "android/app/src/main/java/com/yonagraphics/niguschess/MainActivity.java";
+            if (fs.existsSync(javaPath)) {
+              const javaCode = [
+                "package com.yonagraphics.niguschess;",
+                "import android.os.Build;",
+                "import android.os.Bundle;",
+                "import android.view.View;",
+                "import android.view.Window;",
+                "import android.view.WindowManager;",
+                "import androidx.core.view.WindowCompat;",
+                "import androidx.core.view.WindowInsetsCompat;",
+                "import androidx.core.view.WindowInsetsControllerCompat;",
+                "import com.getcapacitor.BridgeActivity;",
+                "public class MainActivity extends BridgeActivity {",
+                "  @Override",
+                "  public void onCreate(Bundle savedInstanceState) {",
+                "    super.onCreate(savedInstanceState);",
+                "    Window window = getWindow();",
+                "    window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);",
+                "    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {",
+                "      WindowManager.LayoutParams lp = window.getAttributes();",
+                "      lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;",
+                "      window.setAttributes(lp);",
+                "    }",
+                "    hideSystemUI();",
+                "  }",
+                "  @Override",
+                "  public void onResume() {",
+                "    super.onResume();",
+                "    hideSystemUI();",
+                "  }",
+                "  @Override",
+                "  public void onWindowFocusChanged(boolean hasFocus) {",
+                "    super.onWindowFocusChanged(hasFocus);",
+                "    if (hasFocus) hideSystemUI();",
+                "  }",
+                "  private void hideSystemUI() {",
+                "    Window window = getWindow();",
+                "    View decorView = window.getDecorView();",
+                "    WindowCompat.setDecorFitsSystemWindows(window, false);",
+                "    WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decorView);",
+                "    if (controller != null) {",
+                "      controller.hide(WindowInsetsCompat.Type.systemBars());",
+                "      controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);",
+                "    }",
+                "    decorView.setSystemUiVisibility(",
+                "      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_STABLE",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION",
+                "      | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN",
+                "      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION",
+                "      | View.SYSTEM_UI_FLAG_FULLSCREEN);",
+                "  }",
+                "}"
+              ].join("\n");
+              fs.writeFileSync(javaPath, javaCode);
             }
-            syncBoardImmediate();
-            isAnimating = false;
-            if (onComplete) onComplete();
-            return true;
-          }
-          return false;
-        }
-      });
-    }
+          '
 
-    // --- CLEAN BOARD TAP (NO POPUP ON PIECE TAP) ---
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
+      - name: 6. Generate Custom Nigus Crown & Yona Graphics Icon
+        run: |
+          mkdir -p assets
+          if [ ! -f "assets/icon.png" ]; then
+            echo '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#1D1612"/><circle cx="512" cy="512" r="410" fill="none" stroke="#D4AF37" stroke-width="22" opacity="0.65"/><circle cx="512" cy="512" r="370" fill="none" stroke="#FFE082" stroke-width="6" opacity="0.4"/><path d="M496 170 H528 V225 H582 V257 H528 V320 H496 V257 H442 V225 H496 Z" fill="#FFE082"/><path d="M292 670 L260 410 L395 495 L512 325 L629 495 L764 410 L732 670 Z" fill="#D4AF37"/><rect x="285" y="695" width="454" height="60" rx="18" fill="#FFE082"/><circle cx="512" cy="560" r="28" fill="#FF5722"/><circle cx="395" cy="580" r="18" fill="#FF7043"/><circle cx="629" cy="580" r="18" fill="#FF7043"/></svg>' > assets/icon.svg
+            sudo apt-get update && sudo apt-get install -y librsvg2-bin
+            rsvg-convert -w 1024 -h 1024 assets/icon.svg -o assets/icon.png
+          fi
+          cp assets/icon.png assets/icon-only.png
+          npx capacitor-assets generate --android --iconBackgroundColor '#1D1612' --iconBackgroundColorDark '#1D1612' || true
+          npx cap sync android
 
-    function clearHighlights() {
-      Object.values(highlightMeshes).forEach(h => (h.visible = false));
-    }
+      - name: 7. Compile Debug APK with Gradle
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
-    function selectSquare(sq) {
-      clearHighlights();
-      selectedSquare = sq;
-      if (!sq) return;
-
-      playSound('select');
-      legalMovesForSelected = game.moves({ square: sq, verbose: true });
-      highlightMeshes[sq].material.color.setHex(0x00E5FF);
-      highlightMeshes[sq].visible = true;
-
-      legalMovesForSelected.forEach(m => {
-        const hl = highlightMeshes[m.to];
-        hl.material.color.setHex(m.captured ? 0xFF3D00 : 0xFFD54F);
-        hl.visible = true;
-      });
-    }
-
-    function handleBoardTap(clientX, clientY) {
-      if (!document.getElementById('main-menu').classList.contains('hidden')) return;
-      if (isAnimating || game.game_over()) return;
-      if (vsAI && game.turn() !== playerColor) return;
-
-      pointer.x = (clientX / window.innerWidth) * 2 - 1;
-      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-
-      const hits = raycaster.intersectObjects(boardGroup.children, true);
-      let tappedSq = null;
-      for (const hit of hits) {
-        let obj = hit.object;
-        while (obj && !obj.userData.square) obj = obj.parent;
-        if (obj && obj.userData.square) {
-          tappedSq = obj.userData.square;
-          break;
-        }
-      }
-
-      if (!tappedSq) {
-        selectSquare(null);
-        return;
-      }
-
-      const chosenMove = legalMovesForSelected.find(m => m.to === tappedSq);
-      if (selectedSquare && chosenMove) {
-        const moveResult = game.move({ from: selectedSquare, to: tappedSq, promotion: 'q' });
-        selectedSquare = null;
-        legalMovesForSelected = [];
-        if (moveResult) {
-          executeAnimatedMove(moveResult, () => {
-            if (vsAI && !game.game_over() && game.turn() === getAIColor()) {
-              setTimeout(makeAIMove, 340);
-            }
-          });
-        }
-        return;
-      }
-
-      const pieceOnSq = game.get(tappedSq);
-      if (pieceOnSq && pieceOnSq.color === game.turn()) {
-        selectSquare(tappedSq);
-      } else {
-        selectSquare(null);
-      }
-    }
-
-    let downPos = { x: 0, y: 0 };
-    renderer.domElement.addEventListener('pointerdown', e => { downPos = { x: e.clientX, y: e.clientY }; });
-    renderer.domElement.addEventListener('pointerup', e => {
-      const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-      if (dist < 12) handleBoardTap(e.clientX, e.clientY);
-    });
-
-    function makeAIMove() {
-      if (game.game_over() || game.turn() !== getAIColor()) return;
-      const moves = game.moves({ verbose: true });
-      if (!moves.length) return;
-
-      const pieceVal = { p: 10, n: 30, b: 33, r: 50, q: 95, k: 900 };
-      moves.sort((a, b) => {
-        const noise = aiDifficulty === 0 ? 25 : aiDifficulty === 1 ? 6 : 1;
-        const centerA = (a.to === 'd4' || a.to === 'e4' || a.to === 'd5' || a.to === 'e5') ? 8 : 0;
-        const centerB = (b.to === 'd4' || b.to === 'e4' || b.to === 'd5' || b.to === 'e5') ? 8 : 0;
-        const scoreA = (a.captured ? pieceVal[a.captured] : 0) + centerA + Math.random() * noise;
-        const scoreB = (b.captured ? pieceVal[b.captured] : 0) + centerB + Math.random() * noise;
-        return scoreB - scoreA;
-      });
-
-      const moveResult = game.move(moves[0]);
-      if (moveResult) executeAnimatedMove(moveResult);
-    }
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2200);
-    }
-
-    function updateHUD() {
-      const statusEl = document.getElementById('status-text');
-      const dotEl = document.getElementById('turn-dot');
-      const turn = game.turn();
-
-      dotEl.style.background = turn === 'w' ? '#FFE082' : '#FF5722';
-      dotEl.style.boxShadow = turn === 'w' ? '0 0 10px #FFE082' : '0 0 10px #FF5722';
-
-      if (game.in_checkmate()) {
-        statusEl.textContent = (turn === 'w' ? 'Obsidian' : 'Marble') + ' Wins! (ድል)';
-        showToast('👑 ድል! Royal Checkmate!');
-
-        if (!matchRecorded) {
-          matchRecorded = true;
-          const winnerColor = turn === 'w' ? 'b' : 'w';
-          if (winnerColor === playerColor) recordMatchResult('win');
-          else recordMatchResult('loss');
-        }
-      } else if (game.in_draw()) {
-        statusEl.textContent = 'Royal Draw';
-        if (!matchRecorded) {
-          matchRecorded = true;
-          recordMatchResult('draw');
-        }
-      } else {
-        const side = turn === 'w' ? 'Marble (ንጉሥ)' : 'Obsidian (እሳት)';
-        statusEl.textContent = side + (game.in_check() ? ' • CHECK!' : '');
-      }
-    }
-
-    window.startMatch = function(aiMode) {
-      requestAppFullscreen();
-      vsAI = aiMode;
-      matchRecorded = false;
-      const btn = document.getElementById('btn-mode');
-      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
-      btn.classList.toggle('active', vsAI);
-      game.reset();
-      selectSquare(null);
-      syncBoardImmediate();
-      setCameraForPlayer();
-      document.getElementById('btn-resume').style.display = 'flex';
-      closeMenu();
-
-      const sideLabel = playerColor === 'w' ? 'Ivory Marble' : 'Obsidian Ember';
-      showToast(vsAI ? `⚔️ Playing as ${sideLabel} vs AI` : '⚔️ 2-Player Royal Duel Started');
-
-      if (vsAI && playerColor === 'b' && game.turn() === 'w') {
-        setTimeout(makeAIMove, 500);
-      }
-    };
-
-    window.openMenu = function() { document.getElementById('main-menu').classList.remove('hidden'); };
-    window.closeMenu = function() {
-      requestAppFullscreen();
-      document.getElementById('main-menu').classList.add('hidden');
-      setCameraForPlayer();
-    };
-    window.cycleDifficulty = function() {
-      aiDifficulty = (aiDifficulty + 1) % 3;
-      const names = ['Dejazmach', 'Ras', 'Nigus'];
-      document.getElementById('diff-label').textContent = names[aiDifficulty];
-      showToast('🧠 AI Rank: ' + names[aiDifficulty]);
-    };
-    window.toggleMode = function() {
-      vsAI = !vsAI;
-      const btn = document.getElementById('btn-mode');
-      btn.textContent = vsAI ? '🤖 vs AI' : '👥 2-Player';
-      btn.classList.toggle('active', vsAI);
-      showToast(vsAI ? 'Mode: vs Royal AI' : 'Mode: 2-Player Duel');
-    };
-    window.cycleCamera = function() {
-      camPreset = (camPreset + 1) % 3;
-      const btn = document.getElementById('btn-cam');
-      if (camPreset === 0) { camera.position.set(0, 8.2, 9.4); btn.textContent = '🎥 View: Marble'; }
-      else if (camPreset === 1) { camera.position.set(0, 8.2, -9.4); btn.textContent = '🎥 View: Obsidian'; }
-      else { camera.position.set(0, 13.8, 0.01); btn.textContent = '🎥 View: Tactical'; }
-      controls.target.set(0, 0.3, 0);
-    };
-    window.toggleActionCam = function() {
-      actionCamEnabled = !actionCamEnabled;
-      document.getElementById('btn-fx').classList.toggle('active', actionCamEnabled);
-      showToast(actionCamEnabled ? '⚡ Action Cam ON' : '⚡ Action Cam OFF');
-    };
-    window.undoMove = function() {
-      if (isAnimating) return;
-      game.undo();
-      if (vsAI && game.turn() === getAIColor()) game.undo();
-      selectSquare(null); syncBoardImmediate();
-      showToast('↩️ Move Undone');
-    };
-    window.resetGame = function() {
-      if (isAnimating) return;
-      game.reset(); matchRecorded = false;
-      selectSquare(null); syncBoardImmediate(); setCameraForPlayer();
-      showToast('🔄 New Match Started');
-      if (vsAI && playerColor === 'b' && game.turn() === 'w') { setTimeout(makeAIMove, 500); }
-    };
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    let lastTime = performance.now();
-    function animate(now) {
-      requestAnimationFrame(animate);
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-
-      const menuOpen = !document.getElementById('main-menu').classList.contains('hidden');
-      if (menuOpen) {
-        const angle = now * 0.00025;
-        camera.position.x = Math.sin(angle) * 10.5;
-        camera.position.z = Math.cos(angle) * 10.5;
-        camera.position.y = 7.2;
-        controls.target.set(0, 0.4, 0);
-      }
-
-      Object.values(pieceMeshes).forEach(mesh => {
-        const fg = mesh.userData.floatGroup;
-        const sg = mesh.userData.spinGroup;
-        if (fg) fg.position.y = Math.sin(now * 0.003 + mesh.userData.phase) * 0.035;
-        if (sg) sg.rotation.y += dt * 0.9;
-      });
-
-      for (let i = activeAnimations.length - 1; i >= 0; i--) {
-        if (activeAnimations[i].update(dt)) activeAnimations.splice(i, 1);
-      }
-
-      for (let i = activeShards.length - 1; i >= 0; i--) {
-        const s = activeShards[i];
-        s.userData.vel.y -= 9.8 * dt;
-        s.position.addScaledVector(s.userData.vel, dt);
-        s.rotation.x += s.userData.rot.x * dt;
-        s.rotation.y += s.userData.rot.y * dt;
-        if (s.position.y < 0.08) {
-          s.position.y = 0.08;
-          s.userData.vel.y *= -0.45;
-          s.userData.vel.x *= 0.7;
-          s.userData.vel.z *= 0.7;
-        }
-        s.userData.life -= dt * 0.75;
-        if (s.userData.life <= 0) {
-          scene.remove(s);
-          activeShards.splice(i, 1);
-        }
-      }
-
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    syncBoardImmediate();
-    requestAnimationFrame(animate);
-  </script>
-</body>
-</html>
+      - name: 8. Upload Nigus APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nigus-Ethiopian-Chess-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
